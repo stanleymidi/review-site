@@ -438,13 +438,13 @@ function fcSetP(p){localStorage.setItem('fc_progress',JSON.stringify(p))}
 function fcCatColor(c){return FCOLORS[c]||'#888'}
 
 function fcRefresh(){
-  const pg=fcGetP();const today=today();
+  const pg=fcGetP();const td=today();
   // 收集待复习卡片
   let cards=[];
   FLASHCARDS.forEach(f=>{
     const s=pg[f.id];
     if(s&&s.status==='known')return;
-    if(s&&s.nextReview&&s.nextReview>today)return;
+    if(s&&s.nextReview&&s.nextReview>td)return;
     cards.push(f);
   });
   fcQueue=cards.sort((a,b)=>(FCAT_ORDER[a.cat]||9)-(FCAT_ORDER[b.cat]||9));
