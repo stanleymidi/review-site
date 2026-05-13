@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>复习系统 — 日语 & 制度</title>
+<style>
+:root{--bg:#0f0f1a;--card:#1a1a2e;--gold:#e8a84c;--text:#e0e0e0;--dim:#888;--green:#4caf50;--red:#e74c3c;--blue:#4a9eff;--orange:#e8a84c;--border:#2a2a4a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0 0 80px}
+.tabs{display:flex;position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:14px 8px;text-align:center;cursor:pointer;font-size:15px;font-weight:600;color:var(--dim);border-bottom:2px solid transparent;transition:.2s}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab .badge{display:inline-block;background:rgba(232,168,76,.2);color:var(--gold);font-size:11px;padding:1px 7px;border-radius:8px;margin-left:4px}
+.panel{display:none;padding:12px}
+.panel.active{display:block}
+.header{text-align:center;padding:16px 0 8px}
+.header h1{font-size:20px;color:var(--gold)}
+.header .sub{font-size:13px;color:var(--dim);margin-top:2px}
+.stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0 16px}
+.stat{background:var(--card);padding:8px 14px;border-radius:10px;font-size:13px;border:1px solid var(--border)}
+.stat .num{color:var(--gold);font-weight:700;font-size:16px}
+.btn{background:var(--gold);color:#111;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:.2s}
+.btn:hover{opacity:.85}
+.btn-sm{padding:6px 14px;font-size:12px}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-dim{background:var(--border);color:var(--dim)}
+.btn-outline{background:transparent;border:1px solid var(--gold);color:var(--gold)}
+.card-grid{display:flex;flex-direction:column;gap:10px;max-width:600px;margin:0 auto}
+.lyric-card{background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);transition:.3s}
+.lyric-card.locked{opacity:.35}
+.lyric-card.locked .card-front,.lyric-card.locked .card-header{opacity:.2;pointer-events:none}
+.lyric-card .unlock-area{opacity:1!important;pointer-events:auto!important}
+.lyric-card.completed{border-color:var(--green);box-shadow:0 0 12px rgba(76,175,80,.15)}
+.lyric-card.active{border-color:var(--gold);box-shadow:0 0 12px rgba(232,168,76,.15)}
+.lyric-card.forgotten{opacity:.3;filter:grayscale(.7);pointer-events:none}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.line-num{color:var(--dim);font-size:12px}
+.cycle-dots{display:flex;gap:3px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--border);border:1px solid #333}
+.dot.done{background:var(--gold);border-color:var(--gold)}
+.dot.fail{background:var(--orange);opacity:.4;border-color:var(--orange)}
+.japanese-text{font-size:18px;line-height:1.5;margin:4px 0 6px}
+.reading-text{font-size:14px;color:var(--dim);margin-bottom:4px}
+.actions{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+.action-row{display:flex;gap:8px;margin-top:8px}
+.status-badge{font-size:11px;padding:2px 8px;border-radius:6px}
+.status-badge.locked{background:rgba(136,136,136,.2);color:var(--dim)}
+.status-badge.completed{background:rgba(76,175,80,.2);color:var(--green)}
+.status-badge.active{background:rgba(232,168,76,.2);color:var(--gold)}
+.status-badge.waiting{background:rgba(136,136,136,.15);color:var(--dim)}
+.status-badge.forgotten{background:rgba(231,76,60,.2);color:var(--red)}
+.expand-content{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.expand-content.show{display:block}
+.expand-toggle{color:var(--gold);font-size:13px;cursor:pointer;opacity:.7}
+.expand-toggle:hover{opacity:1}
+.chinese-text{color:#b8d4b8;font-size:15px;margin-bottom:8px;line-height:1.4}
+.words-section{background:rgba(255,255,255,.04);border-radius:8px;padding:10px;margin:8px 0}
+.word-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:13px}
+.word-item{display:flex;gap:4px;align-items:baseline}
+.word-kanji{color:var(--gold)}
+.word-reading{color:var(--dim);font-size:12px}
+.word-meaning{color:var(--text);font-size:12px}
+.grammar-section{background:rgba(232,168,76,.06);border-radius:8px;padding:10px;margin:8px 0;font-size:13px;line-height:1.5;color:#ddd}
+.grammar-section strong{color:var(--gold)}
+
+/* Flashcard styles */
+.flashcard-list{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.fcard{background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);cursor:pointer;transition:.3s;position:relative}
+.fcard .q{font-size:15px;margin-bottom:8px;line-height:1.4}
+.fcard .cat-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin-right:4px}
+.cat-内控{background:rgba(232,168,76,.2);color:var(--gold)}
+.cat-质量{background:rgba(74,158,255,.2);color:var(--blue)}
+.cat-安全{background:rgba(106,191,106,.2);color:#6abf6a}
+.cat-组织{background:rgba(155,89,182,.2);color:#9b59b6}
+.cat-HPDS{background:rgba(52,152,219,.2);color:#3498db}
+.cat-表单{background:rgba(231,76,60,.2);color:#e74c3c}
+.cat-两化融合{background:rgba(26,188,156,.2);color:#1abc9c}
+.fcard .src{font-size:11px;color:var(--dim);margin-top:6px}
+.fcard .a-wrap{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.fcard .a-wrap.show{display:block}
+.fcard .answer{color:#b8d4b8;font-size:14px;line-height:1.5;margin-bottom:8px}
+.fcard .src-text{background:rgba(255,255,255,.03);border-radius:6px;padding:8px;font-size:12px;color:#999;line-height:1.5;margin:6px 0;border-left:3px solid var(--gold)}
+.fcard .src-text .hl{color:var(--gold);font-weight:700}
+.fcard .fc-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.fcard .fc-actions .btn{font-size:12px;padding:7px 14px}
+.fcard.done{opacity:.25;pointer-events:none}
+.fcard .review-count{font-size:11px;color:var(--dim);margin-top:6px}
+.text-center{text-align:center}
+.mt-8{margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <div class="tab active" data-tab="japanese" onclick="switchTab('japanese')">
+    🇯🇵 日语复习 <span class="badge" id="jp-badge">28</span>
+  </div>
+  <div class="tab" data-tab="flashcard" onclick="switchTab('flashcard')">
+    📋 制度卡片 <span class="badge" id="fc-badge">52</span>
+  </div>
+</div>
+
+<!-- Japanese Panel -->
+<div class="panel active" id="panel-japanese">
+  <div class="header">
+    <h1>🎵 冬の花</h1>
+    <div class="sub">宮本浩次 — 艾宾浩斯复习</div>
+  </div>
+  <div class="stats" id="jp-stats"></div>
+  <div class="text-center mt-8">
+    <button class="btn btn-outline btn-sm" onclick="resetAllJapanese()">🔄 全部重置</button>
+  </div>
+  <div class="card-grid" id="jp-cards"></div>
+</div>
+
+<!-- Flashcard Panel -->
+<div class="panel" id="panel-flashcard">
+  <div class="header">
+    <h1>📋 制度文件卡片</h1>
+    <div class="sub">汇众汽车 — 52道制度知识题</div>
+  </div>
+  <div class="stats" id="fc-stats"></div>
+  <div class="flashcard-list" id="fc-cards"></div>
+</div>
+
+<script>
+// ===== DATA =====
+const JAPANESE_SONG = {
+  title:"冬の花",artist:"宮本浩次",slug:"fuyu-no-hana",
+  lines:[
+    {id:"f1",japanese:"いずれ花と散る　わたしの生命",reading:"いずれ はな と ちる わたし の いのち",chinese:"终将如花般凋零 我的生命",grammar:"【花と散る】=花のように散る。\n【生命(いのち)】注意读いのち不读せいめい。",words:[["いずれ","いずれ","终将、迟早"],["花(はな)","はな","花"],["散る(ちる)","ちる","凋零"],["生命(いのち)","いのち","生命"]]},
+    {id:"f2",japanese:"帰らぬ時　指おり数えても",reading:"かえらぬ とき ゆびおり かぞえても",chinese:"即使掰着手指细数那不归的时光",grammar:"【帰らぬ】文语否定=帰らない。\n【ても】即使…也。",words:[["帰らぬ(かえらぬ)","かえらぬ","不归的"],["時(とき)","とき","时光"],["指おり(ゆびおり)","ゆびおり","掰手指"],["数えても(かぞえても)","かぞえても","即使数着"]]},
+    {id:"f3",japanese:"涙と笑い　過去と未来",reading:"なみだ と わらい かこ と みらい",chinese:"泪水与欢笑 过去与未来",grammar:"【AとB】并列助词と，\n将两组对照词连接。",words:[["涙(なみだ)","なみだ","泪水"],["笑い(わらい)","わらい","欢笑"],["過去(かこ)","かこ","过去"],["未来(みらい)","みらい","未来"]]},
+    {id:"f4",japanese:"引き裂かれしわたしは　冬の花",reading:"ひきさかれし わたし は ふゆ の はな",chinese:"被撕裂的我 是冬之花",grammar:"【引き裂かれし】文语被动\n=引き裂かれた。",words:[["引き裂かれし(ひきさかれし)","ひきさかれし","被撕裂的"],["冬(ふゆ)","ふゆ","冬天"],["花(はな)","はな","花"]]},
+    {id:"f5",japanese:"あなたは太陽　わたしは月",reading:"あなた は たいよう わたし は つき",chinese:"你是太阳 我是月亮",grammar:"【AはBは】对比结构。\n你是太阳，我是月亮。",words:[["あなた","あなた","你"],["太陽(たいよう)","たいよう","太阳"],["月(つき)","つき","月亮"]]},
+    {id:"f6",japanese:"光と闇が交じり合わぬように",reading:"ひかり と やみ が まじり あわぬ ように",chinese:"如同光与暗不相交融",grammar:"【合わぬ】文语否定=合わない。\n【ように】如同…。",words:[["光(ひかり)","ひかり","光"],["闇(やみ)","やみ","黑暗"],["交じり合わぬ(まじりあわぬ)","まじりあわぬ","不相交融"]]},
+    {id:"f7",japanese:"涙にけむる　ふたりの未来",reading:"なみだ に けむる ふたり の みらい",chinese:"泪水迷蒙的 两人未来",grammar:"【けむる】烟雾弥漫。\n【ふたり】两人。",words:[["涙(なみだ)","なみだ","泪水"],["けむる","けむる","烟雾弥漫"],["ふたり","ふたり","两人"],["未来(みらい)","みらい","未来"]]},
+    {id:"f8",japanese:"美しすぎる過去は蜃気楼",reading:"うつくし すぎる かこ は しんきろう",chinese:"过于美好的过去是海市蜃楼",grammar:"【すぎる】接形容词尾\n表示「过于」。",words:[["美し(うつくし)","うつくし","美丽"],["すぎる","すぎる","过于"],["過去(かこ)","かこ","过去"],["蜃気楼(しんきろう)","しんきろう","海市蜃楼"]]},
+    {id:"f9",japanese:"旅みたいだね",reading:"たび みたい だね",chinese:"就像一场旅行呢",grammar:"【みたいだ】比喻\n像…一样。",words:[["旅(たび)","たび","旅行"],["みたいだ","みたいだ","像是"]]},
+    {id:"f10",japanese:"生きるってどんな時でも",reading:"いきるって どんな とき でも",chinese:"无论何时 活着这件事",grammar:"【って】口语话题标记=とは。\n【どんな〜でも】无论…。",words:[["生きる(いきる)","いきる","活着"],["どんな時(どんなとき)","どんなとき","无论何时"],["でも","でも","无论"]]},
+    {id:"f11",japanese:"木枯らしの中　ぬくもり求め　彷徨う",reading:"こがらし の なか ぬくもり もとめ さまよう",chinese:"在寒风中 寻求温暖 彷徨徘徊",grammar:"【木枯らし】秋末冬初的寒风。",words:[["木枯らし(こがらし)","こがらし","寒风"],["ぬくもり","ぬくもり","温暖"],["求め(もとめ)","もとめ","寻求"],["彷徨う(さまよう)","さまよう","彷徨"]]},
+    {id:"f12",japanese:"泣かないで　わたしの恋心",reading:"なかないで わたし の こいごころ",chinese:"别哭泣 我的恋心",grammar:"【ないで】否定请求，\n请不要…。",words:[["泣かないで(なかないで)","なかないで","别哭"],["恋心(こいごころ)","こいごころ","恋心"]]},
+    {id:"f13",japanese:"涙は「お前」にはにあわない",reading:"なみだ は おまえ に は にあわない",chinese:"眼泪不适合你",grammar:"【にあわない】不相称、\n不适合。",words:[["涙(なみだ)","なみだ","眼泪"],["お前(おまえ)","おまえ","你(亲昵)"],["にあわない","にあわない","不适合"]]},
+    {id:"f14",japanese:"ゆけ　ただゆけ　いっそわたしがゆくよ",reading:"ゆけ ただ ゆけ いっそ わたし が ゆくよ",chinese:"去吧 只管去吧 不如让我去吧",grammar:"【ゆけ】命令形=行け。\n【いっそ】不如…。",words:[["ゆけ","ゆけ","去吧"],["ただ","ただ","只管"],["いっそ","いっそ","不如"],["ゆく","ゆく","去"]]},
+    {id:"f15",japanese:"ああ　心が笑いたがっている",reading:"ああ こころ が わらいたがっている",chinese:"啊啊 心在渴望欢笑",grammar:"【たがっている】第三人称\n愿望，想要…。",words:[["心(こころ)","こころ","心"],["笑いたがっている(わらいたがっている)","わらいたがっている","渴望欢笑"]]},
+    {id:"f16",japanese:"なんか悲しいね　生きてるって",reading:"なんか かなしい ね いきてるって",chinese:"总觉得有些悲伤呢 活着这件事",grammar:"【なんか】总感觉。\n【って】话题标记。",words:[["なんか","なんか","总觉得"],["悲しい(かなしい)","かなしい","悲伤"],["生きてる(いきてる)","いきてる","活着"],["って","って","(话题)"]]},
+    {id:"f17",japanese:"重ねし約束　あなたとふたり",reading:"かさねし やくそく あなた と ふたり",chinese:"与你两人 许下的层层约定",grammar:"【重ねし】文语=重ねた。",words:[["重ねし(かさねし)","かさねし","层层叠加的"],["約束(やくそく)","やくそく","约定"],["ふたり","ふたり","两人"]]},
+    {id:"f18",japanese:"時のまにまに　たゆたいながら",reading:"とき の まにまい たゆたい ながら",chinese:"随波逐流 在时光中摇曳",grammar:"【まにまに】随着…。\n【ながら】一边…一边。",words:[["時(とき)","とき","时光"],["まにまに","まにまに","随…"],["たゆたい","たゆたい","摇曳"]]},
+    {id:"f19",japanese:"涙を隠した　しあわせ芝居",reading:"なみだ を かくした しあわせ しばい",chinese:"隐藏眼泪的 幸福演技",grammar:"【芝居】原意为戏剧，\n这里指装作幸福的样子。",words:[["涙(なみだ)","なみだ","眼泪"],["隠した(かくした)","かくした","隐藏了"],["芝居(しばい)","しばい","演技"]]},
+    {id:"f20",japanese:"さらば思い出たちよ",reading:"さらば おもいで たちよ",chinese:"再见了 回忆们",grammar:"【さらば】=さようなら。\n【たち】接名词表复数。",words:[["さらば","さらば","再见了"],["思い出(おもいで)","おもいで","回忆"],["たち","たち","(复数)"]]},
+    {id:"f21",japanese:"ひとり歩く摩天楼",reading:"ひとり あるく まてんろう",chinese:"独自行走在摩天楼",grammar:"【摩天楼】摩天大楼。",words:[["ひとり","ひとり","独自"],["歩く(あるく)","あるく","行走"],["摩天楼(まてんろう)","まてんろう","摩天楼"]]},
+    {id:"f22",japanese:"わたしという名の物語は　最終章",reading:"わたし という な の ものがたり は さいしゅうしょう",chinese:"名为我的故事 迎来最终章",grammar:"【という名の】\n名为…的。",words:[["わたし","わたし","我"],["という名(というな)","というな","名为"],["物語(ものがたり)","ものがたり","故事"],["最終章(さいしゅうしょう)","さいしゅうしょう","最终章"]]},
+    {id:"f23",japanese:"悲しくって泣いてるわけじゃあない",reading:"かなしくって ないてる わけ じゃあない",chinese:"并不是因为悲伤而哭泣",grammar:"【わけじゃない】\n并不是…。",words:[["悲しくって(かなしくって)","かなしくって","因为悲伤"],["泣いてる(ないてる)","ないてる","在哭"],["わけじゃあない","わけじゃあない","并不是"]]},
+    {id:"f24",japanese:"生きてるから涙が出るの",reading:"いきてる から なみだ が でる の",chinese:"是因为活着所以流下泪水",grammar:"【から】表原因理由。\n【の】句末，表说明。",words:[["生きてる(いきてる)","いきてる","活着"],["から","から","因为"],["涙(なみだ)","なみだ","眼泪"],["出る(でる)","でる","流出"]]},
+    {id:"f25",japanese:"こごえる季節に鮮やかに咲くよ",reading:"こごえる きせつ に あざやか に さくよ",chinese:"在冰封的季节里 鲜艳地绽放",grammar:"【こごえる】冻僵。\n【に】动作发生的时间。",words:[["こごえる","こごえる","冰封"],["季節(きせつ)","きせつ","季节"],["鮮やか(あざやか)","あざやか","鲜艳"],["咲く(さく)","さく","绽放"]]},
+    {id:"f26",japanese:"ああ　わたしが　負けるわけがない",reading:"ああ わたし が まける わけ が ない",chinese:"啊啊 我不可能会输",grammar:"【わけがない】\n不可能、不会。",words:[["負ける(まける)","まける","输"],["わけがない","わけがない","不可能"]]},
+    {id:"f27",japanese:"ひと知れず　されど誇らかに咲け",reading:"ひと しれず されど ほこらか に さけ",chinese:"不为所知 却也骄傲地绽放",grammar:"【知れず】=知られず。\n【されど】古语=しかし。",words:[["ひと知れず(ひとしれず)","ひとしれず","不为人知"],["されど","されど","然而"],["誇らか(ほこらか)","ほこらか","骄傲地"],["咲け(さけ)","さけ","绽放"]]},
+    {id:"f28",japanese:"胸には涙　顔には笑顔で　今日もわたしは出かける",reading:"むね に は なみだ かお に は えがお で きょう も わたし は でかける",chinese:"心中含泪 脸上带笑 今天我也出门去",grammar:"【には…には…】对照结构。\n心中…脸上…。",words:[["胸(むね)","むね","心中"],["涙(なみだ)","なみだ","眼泪"],["顔(かお)","かお","脸上"],["笑顔(えがお)","えがお","笑脸"],["今日(きょう)","きょう","今天"],["出かける(でかける)","でかける","出门"]]}
+  ]
+};
+const EBBINGHAUS = [1,2,4,7,15,30];
+
+const FLASHCARDS = [
+  {id:"ic01",q:"汇众内控体系以什么框架为理论基础？",a:"COSO内部控制框架（五要素），结合华域汽车管控要求，扩展为八大要素体系。",src:"01-CE控制环境D1",cat:"内控",chap:"控制环境(CE)",src_text:"以COSO内部控制框架为理论基础，结合华域汽车系统股份有限公司《内部控制手册》（3.0版）的管控要求，构建了CE+RA+IC+MO+CA系列八大要素体系。",hl:"COSO内部控制框架"},
+  {id:"ic02",q:"汇众内控八大要素分别是哪些？",a:"管理控制层：CE/RA/IC/MO；业务控制层：CA系列（CA-SP/BU/HR/FR/CT/TA/PP/RE/FA/IM/CC/LA/TR/OI/IA/IT/RD/QM/SA/EV/RP/SI）",src:"01-CE控制环境D1",cat:"内控",chap:"控制环境(CE)",src_text:"汇众公司以COSO内部控制框架为理论基础，构建了"CE+RA+IC+MO+CA系列"八大要素体系。其中CE/RA/IC/MO为管理控制层，CA系列为业务控制层，按业务域划分。",hl:"CE/RA/IC/MO"},
+  {id:"ic03",q:"内控缺陷分哪几个等级？重大缺陷的财务报告门槛是多少？",a:"三级：重大缺陷、重要缺陷、一般缺陷。重大缺陷：≥资产总额2% 或 ≥营业收入2% 或 ≥净利润10%。",src:"RA0201内部控制缺陷认定标准D0",cat:"内控",chap:"风险评估(RA)",src_text:"重大缺陷：财务报告错报金额≥资产总额2%或≥营业收入2%或≥净利润10%；非财务报告资产损失按企业规模分级。重要缺陷：≥资产总额1%或≥营业收入1%或≥净利润5%。一般缺陷：其他错报。",hl:"重大缺陷：≥资产总额2%或≥营业收入2%或≥净利润10%"},
+  {id:"ic04",q:"内控建设得分公式是什么？",a:"100 - 100×(重大×50+重要×10+一般×2)/检查点 - 未整改重大×3 - 未整改重要×2 - 未整改一般×1",src:"RA0201内部控制缺陷认定标准D0",cat:"内控",chap:"风险评估(RA)",src_text:"内控建设得分=100-100×(重大×50+重要×10+一般×2)/审计检查点-未整改重大×3-未整改重要×2-未整改一般×1，部门绩效计分采用该公式。",hl:"内控建设得分=100-100×(重大×50+重要×10+一般×2)/审计检查点"},
+  {id:"ic05",q:"公司级管理文件的编号格式是什么？",a:"SHAC-{架构分类}/{流程域代号}.{L2}.{L3}-{文件类型}[V版本]。类型：MA手册、PL制度、PR流程、ST标准、FM表单、AG协议、CT合同。",src:"CG5.2-ST-管理文件控制程序V1.0",cat:"内控",chap:"制度文档管理(CE09)",src_text:"手册、制度类编号样式：SHAC-S/CG5.2.1-PR[V1.0]；表单类、协议模板及合同模板编号样式：SHAC/FM-CG002[V1]。",hl:"SHAC-S/CG5.2.1-PR[V1.0]"},
+  {id:"ic06",q:"公司级文件正文的8个固定章节是什么？",a:"1.0描述 2.0术语 3.0图示 4.0职责 5.0规定 6.0业务流程(6.1流程图+6.2流程说明) 7.0表单 8.0附录",src:"CG5.2-ST-管理文件控制程序V1.0",cat:"内控",chap:"制度文档管理(CE09)",src_text:"正文包括：描述、术语、图示、职责、规定、业务流程、表单、附录等8项固定内容。其中业务流程下设6.1流程图和6.2流程说明。",hl:"描述、术语、图示、职责、规定、业务流程、表单、附录"},
+  {id:"ic07",q:"13个流程域中生产制造域、EHS域、党群管理域的负责部门各是？",a:"生产制造域→运控部、EHS域→安保部、党群管理域→党群部。",src:"CG5.2-ST-管理文件控制程序V1.0",cat:"内控",chap:"制度文档管理(CE09)",src_text:"流程域负责部门：生产制造域--运控部；EHS域--安保部；党群管理域--党群部。",hl:"生产制造域--运控部；EHS域--安保部；党群管理域--党群部"},
+  {id:"ic08",q:"会计档案的保管期限分哪几类？什么情况下不得销毁？",a:"永久、定期10年、定期30年。未结清的债权债务原始凭证和涉及其他未了事项的凭证不得销毁。",src:"CA-FR0601会计档案管理规定D0",cat:"内控",chap:"财务报告(CA-FR)",src_text:"会计档案保管期限分永久和定期两类，定期又分为10年和30年。保管期满但未结清的债权债务原始凭证和涉及其他未了事项的原始凭证不得销毁。",hl:"未结清的债权债务原始凭证和涉及其他未了事项的原始凭证不得销毁"},
+  {id:"ic09",q:"信息系统密码策略要求是什么？",a:"至少12位(含大小写+数字+特殊字符)；每90天更换；9个月不重复；6次失败自动锁住；远程须双因素认证。",src:"CA-IT0101信息系统安全管理制度D1",cat:"内控",chap:"信息系统(CA-IT)",src_text:"密码至少12位（含大小写+数字+特殊字符）；至少每90天更改；9个月内不得重复使用；连续6次登录失败自动锁住；远程登录须通过堡垒机+双因素认证。",hl:"至少12位（含大小写+数字+特殊字符）；至少每90天更改"},
+  {id:"ic10",q:"安全生产'五同时'是指什么？",a:"在计划、布置、检查、总结、评比生产工作的同时，同时计划、布置、检查、总结、评比安全工作。",src:"CA-SA0201安全五同时管理制度D0",cat:"内控",chap:"安全监督(CA-SA)",src_text:"在计划、布置、检查、总结、评比生产工作的时候，同时计划、布置、检查、总结、评比安全工作。",hl:"同时计划、布置、检查、总结、评比安全工作"},
+  {id:"ic11",q:"危险作业包括哪些种类？审批要求？",a:"高处作业、带电作业、明火易燃作业、爆破作业、中毒窒息作业、受限空间作业。须安全管理部门审批。",src:"CA-SA0208危险作业及电气临时线审批制度D0",cat:"内控",chap:"安全监督(CA-SA)",src_text:"危险作业种类包括高处作业、带电作业、明火易燃作业、爆破作业、中毒窒息作业、受限空间作业等，须需求部门负责人+安全管理部门审批。",hl:"高处作业、带电作业、明火易燃作业、爆破作业、中毒窒息作业、受限空间作业"},
+  {id:"ic12",q:"外来施工安全抵押款比例是多少？",a:"合同金额的1%~5%。",src:"CA-SA0216外来施工安全管理规定D0",cat:"内控",chap:"安全监督(CA-SA)",src_text:"外来施工单位须缴纳合同金额1%-5%的施工安全抵押款，并在安全保障部办理安全手续后进场。",hl:"合同金额1%-5%"},
+  {id:"ic13",q:"一次性外协金额门槛是多少？",a:"50万元以上须经总经理批准。",src:"CA-IM0301一次性外协管理规定D1",cat:"内控",chap:"存货管理(CA-IM)",src_text:"一次性外协申请金额50万以上须经总经理批准，50万元以下按部门级审批流程执行。",hl:"50万以上须经总经理批准"},
+  {id:"ic14",q:"银行账户开立的审批链条是什么？",a:"资金计划人员填表→财务管理科经理审核→财务部总监复核→总经理审批。母公司账户还须上报华域财务部批准。",src:"FIN4.1-PL-银行账户管理V1.0",cat:"内控",chap:"货币资金(CA-TR)",src_text:"财务管理科资金计划人员填写《账户开立/销户申请表》，财务管理科经理审核，财务部总监复核签字，报总经理审批。母公司账户应上报华域汽车财务部批准。",hl:"财务管理科经理审核，财务部总监复核签字，报总经理审批"},
+  {id:"ic15",q:"银行账户销户的判定标准？",a:"一年内无资金变动(结息除外)的账户，经判定后销户。销户后SAP中冻结对应明细科目。",src:"FIN4.1-PL-银行账户管理V1.0",cat:"内控",chap:"货币资金(CA-TR)",src_text:"已开设未使用或长期不使用的账户一般为在一年内没有资金变动（结息除外）的账户。销户后由总账在SAP中将相应账户明细科目冻结。",hl:"一年内没有资金变动（结息除外）"},
+  {id:"ic16",q:"坏账确认的标准有哪些？",a:"债务人破产、死亡、逾期超三年等。已核销坏账须账销案存继续追索。",src:"CA-FR0502坏账报损管理规定D0",cat:"内控",chap:"财务报告(CA-FR)",src_text:"坏账确认标准：债务人破产、死亡、逾期未履行偿债义务超过三年等。坏账核销须经审批流程（按金额分级审批），已核销坏账须账销案存，继续追索。",hl:"债务人破产、死亡、逾期未履行偿债义务超过三年"},
+  {id:"ic17",q:"差旅费住宿和补贴标准？",a:"一般人员住宿300元/天，补贴50元/天。",src:"CA-CC0301差旅费开支规定D2",cat:"内控",chap:"成本费用(CA-CC)",src_text:"差旅费开支规定：一般人员住宿标准300元/天，补贴50元/天。超标需经部门负责人审批。",hl:"住宿标准300元/天，补贴50元/天"},
+  {id:"ic18",q:"内控三列表结构用于什么？",a:"CA系列各业务要素统一格式，每个子要素按此结构编写，形成可追溯的风险控制链条。",src:"CA系列总纲文件",cat:"内控",chap:"内控体系总论",src_text:"各CA要素均采用统一的"风险—控制目标—关键控制活动"三列表结构，每个子要素按此编写，形成可追溯的风险控制链条。",hl:"风险—控制目标—关键控制活动"},
+  {id:"ic19",q:"哪些流程域属于运作类(O)？",a:"研发域(R&D)、市场营销管理域(MKT)、采购与供应链管理域(PUR)、生产制造管理域(PRD)。",src:"CG5.2-ST-管理文件控制程序V1.0",cat:"内控",chap:"制度文档管理(CE09)",src_text:"运作类(O)包含：研发域(R&D)、市场营销管理域(MKT)、采购与供应链管理域(PUR)、生产制造管理域(PRD)。",hl:"研发域(R&D)、市场营销管理域(MKT)、采购与供应链管理域(PUR)、生产制造管理域(PRD)"},
+  {id:"ic20",q:"重大纠纷的金额门槛是多少？",a:"标的500万元。",src:"CA-LA法律事务管理",cat:"内控",chap:"法律事务(CA-LA)",src_text:"法律事务管理规定中，重大纠纷的认定标准为涉案标的500万元。",hl:"标的500万元"},
+  {id:"qm01",q:"汇众公司的质量方针是什么？",a:"遵标准、重预防、严执行、敢担当、追求零缺陷。",src:"01质量管理手册J7",cat:"质量",chap:"质量手册",src_text:"质量方针："遵标准、重预防、严执行、敢担当、追求零缺陷"。遵标准即遵守标准；重预防即绿色制造+风险思维+APQP+FMEA+零缺陷防错；严执行为"三不原则"；敢担当即"我交付，我负责"；追求零缺陷即"第一次把事情做对"。",hl:"遵标准、重预防、严执行、敢担当、追求零缺陷"},
+  {id:"qm02",q:"IATF 16949三大过程分类各多少个？",a:"COP(顾客导向过程)7个、MP(管理过程)4个、SP(支持过程)8个。",src:"01质量管理手册J7",cat:"质量",chap:"质量手册",src_text:"质量管理体系按过程模式分为三大类：COP顾客导向过程7个、MP管理过程4个、SP支持过程8个。",hl:"COP7个、MP4个、SP8个"},
+  {id:"qm03",q:"7个COP分别是哪些？",a:"C01市场及营销、C02先期研发、C03产品项目开发、C04产品及过程变更、C05计划、C06制造与交付、C07顾客服务及反馈。",src:"01质量管理手册J7",cat:"质量",chap:"质量手册",src_text:"七个顾客导向过程：C01市场及营销、C02先期研究与开发、C03产品项目开发、C04产品及过程变更、C05计划、C06制造与交付、C07顾客服务及反馈。",hl:"C01-C07"},
+  {id:"qm04",q:"APQP四个阶段是什么？",a:"①项目启动与产品设计开发 → ②产品设计验证(DV) → ③过程设计与开发(PV) → ④产品与过程确认(PPAP)",src:"SH质B C0301 APQP控制程序J3",cat:"质量",chap:"APQP(C03)",src_text:"产品质量先期策划（APQP）分四阶段：阶段1项目启动与产品设计开发；阶段2产品设计验证；阶段3过程设计与开发；阶段4产品与过程确认（PPAP）。",hl:"项目启动→设计验证→过程开发→PPAP"},
+  {id:"qm05",q:"GR3、GR4、GR5、GR6分别对应什么？",a:"GR3=TG2数据发布(工程冻结)、GR4=项目批准、GR5=SOP(正式供货)、GR6=项目总结关闭。",src:"SH质C C030101新产品PV项目管理J6",cat:"质量",chap:"APQP(C03)",src_text:"项目里程碑关卡评审：GR3为TG2数据发布（工程冻结），GR4为项目批准，GR5为正式供货（SOP），GR6为项目总结与关闭。",hl:"GR3=TG2, GR4=批准, GR5=SOP, GR6=关闭"},
+  {id:"qm06",q:"制造与交付的7个步骤？",a:"①生产计划→②生产准备→③首件验证→④正式生产+过程控制→⑤成品入库→⑥报交出库→⑦运输交付",src:"SH质B C0601制造与交付控制程序J1",cat:"质量",chap:"制造交付(C06)",src_text:"制造与交付流程七步骤：生产计划与物料计划下达→生产准备→首件验证→正式生产+过程确认→成品下线入库→报交出库→运输交付客户。",hl:"生产计划→生产准备→首件验证→正式生产→成品入库→报交出库→运输交付"},
+  {id:"qm07",q:"过程能力CPK要求？",a:"CPK > 1.33",src:"SH质C C060101过程能力控制J1",cat:"质量",chap:"制造交付(C06)",src_text:"过程能力要求CPK>1.33。特殊过程（铸造、焊接、探伤、表面处理等）需确认。",hl:"CPK>1.33"},
+  {id:"qm08",q:"产品审核的频次与范围？",a:"每年≥1次全覆盖，覆盖所有产品组。",src:"C060702产品审核控制程序J2",cat:"质量",chap:"制造交付(C06)",src_text:"产品审核每年至少进行一次全覆盖审核，覆盖所有产品组。",hl:"每年≥1次全覆盖"},
+  {id:"qm09",q:"分供方PPAP验收有哪几类？",a:"等级1：提交保证书+外观批准报告；等级2：提交文件+样品；等级3：提交完整文件+样品（最常用）；等级4：等级3+额外要求；等级5：现场审核+文件+样品。",src:"SH质C C020101分供方先期质量策划J3",cat:"质量",chap:"分供方质量(C02)",src_text:"分供方PPAP验收按等级分为5级，等级3最常用——需提交完整的PPAP文件包和样品。",hl:"等级3最常用：完整文件+样品"},
+  {id:"qm10",q:"量具能力接受准则？",a:"Cg≥1.33且Cgk≥1.33",src:"C060103测量系统与检测能力控制J2",cat:"质量",chap:"制造交付(C06)",src_text:"量具能力指数要求Cg≥1.33且Cgk≥1.33。",hl:"Cg≥1.33且Cgk≥1.33"},
+  {id:"qm11",q:"三不原则是指什么？",a:"不接受不良品、不制造不良品、不流出不良品。",src:"01质量管理手册J7",cat:"质量",chap:"质量手册",src_text:""三不原则"：不接受不良品、不制造不良品、不流出不良品。",hl:"不接受、不制造、不流出"},
+  {id:"qm12",q:"4M变更管理中的4M是什么？",a:"Man(人)、Machine(机)、Material(料)、Method(法)。",src:"SH质C C0401014M变更管理控制程序J1",cat:"质量",chap:"变更管理(C04)",src_text:"4M变更管理：Man(作业人员变更)、Machine(设备变更)、Material(材料变更)、Method(工艺方法变更)。",hl:"人、机、料、法"},
+  {id:"qm13",q:"不合格品处理的7步法？",a:"①标识→②隔离→③评审→④处置(返工/返修/报废)→⑤追溯→⑥纠正预防→⑦验证闭环",src:"SH质C C060201不合格品控制程序J2",cat:"质量",chap:"制造交付(C06)",src_text:"不合格品处理七步法：标识→隔离→评审→处置→追溯→纠正预防措施→验证闭环。",hl:"标识→隔离→评审→处置→追溯→纠正预防→验证"},
+  {id:"qm14",q:"PPAP提交分为哪5个等级？",a:"等级1：提交保证书；等级2：保证书+样品；等级3：保证书+完整文件+样品；等级4：等级3+额外审查；等级5：保证书+样品+现场审核。",src:"SH质B C030101PPAP控制程序J3",cat:"质量",chap:"APQP(C03)",src_text:"PPAP提交等级5级：等级1仅保证书，等级2保证书+样品，等级3保证书+完整文件+样品，等级4等级3+额外要求，等级5保证书+样品+现场审核。",hl:"等级3最常用：保证书+完整文件+样品"},
+  {id:"qm15",q:"FMEA的三种类型和最新版年份？",a:"DFMEA(设计)、PFMEA(过程)、FMEA-MSR(监视系统响应)。最新版AIAG & VDA手册 2019年。",src:"SH质B C030101产品先期质量策划J3",cat:"质量",chap:"APQP(C03)",src_text:"FMEA分DFMEA（设计FMEA）、PFMEA（过程FMEA）、FMEA-MSR（监视系统响应）。最新为AIAG & VDA FMEA手册（2019版）七步法。",hl:"DFMEA、PFMEA、FMEA-MSR — AIAG & VDA 2019"},
+  {id:"qm16",q:"分层审核的层次？",a:"班组级(每日)→车间级(每周)→工厂级(每月)",src:"SH质C C060103分层审核控制程序J1",cat:"质量",chap:"制造交付(C06)",src_text:"分层审核分三个层次：班组级每日实施，车间级每周实施，工厂级每月实施。",hl:"班组每日、车间每周、工厂每月"},
+  {id:"qm17",q:"8D报告8个步骤？",a:"D1组建团队→D2描述问题→D3临时措施→D4根本原因→D5纠正措施→D6验证效果→D7预防措施→D8表彰关闭",src:"SH质C C0602048D问题解决法J1",cat:"质量",chap:"制造交付(C06)",src_text:"8D问题解决法：D1组建团队→D2问题描述→D3实施临时措施→D4识别根本原因→D5选择落实纠正措施→D6效果验证→D7预防再发生→D8总结表彰。",hl:"D1-D8"},
+  {id:"qm18",q:"质量成本分哪三类？",a:"预防成本、鉴定成本、失败成本(内部/外部失败)。",src:"SH质C C060401质量成本控制程序J2",cat:"质量",chap:"制造交付(C06)",src_text:"质量成本分为三类：预防成本（培训、预防性维护等）、鉴定成本（检测、试验等）、失败成本（内/外部废品、返工、索赔等）。",hl:"预防成本、鉴定成本、失败成本"},
+  {id:"sa01",q:"EHS方针是什么？",a:"安全第一、预防为主、防治结合、综合治理。",src:"EHS管理手册J2",cat:"安全",chap:"EHS方针",src_text:"EHS方针：安全第一、预防为主、防治结合、综合治理。",hl:"安全第一、预防为主、防治结合、综合治理"},
+  {id:"sa02",q:"安全生产责任制的核心要求？",a:"一岗双责，管业务必须管安全，管生产经营必须管安全。",src:"EHS2.0安全生产责任制",cat:"安全",chap:"安全责任制(EHS2.0)",src_text:"安全生产责任制核心：一岗双责。管业务必须管安全，管生产经营必须管安全。",hl:"一岗双责"},
+  {id:"sa03",q:"三级安全教育指哪三级？",a:"公司级、车间级、班组级。",src:"EHS2.2安全教育管理制度",cat:"安全",chap:"安全培训(EHS2.2)",src_text:"三级安全教育：公司级（入职/转岗）、车间级（作业环境/危险源）、班组级（岗位操作/应急）。",hl:"公司级、车间级、班组级"},
+  {id:"sa04",q:"应急预案分哪三类？",a:"综合应急预案、专项应急预案、现场处置方案。",src:"EHS2.6应急准备与响应",cat:"安全",chap:"应急管理(EHS2.6)",src_text:"应急预案分三类：综合应急预案（总体）、专项应急预案（特定风险）、现场处置方案（具体场所）。",hl:"综合、专项、现场处置"},
+  {id:"sa05",q:"职业健康体检周期？",a:"岗前（上岗前）、在岗（每年≥1次）、离岗（离职时）。",src:"EHS5.1职业健康管理",cat:"安全",chap:"职业健康(EHS5.1)",src_text:"职业健康体检分三类：上岗前体检（岗前）、在岗期间体检（每年至少1次）、离岗时体检。",hl:"岗前、在岗每年1次、离岗"},
+  {id:"sa06",q:"PPE(个人防护用品)如何分类？",a:"头部、呼吸、眼面、听力、手部、足部、身体、防坠落等。",src:"EHS7.1个人防护用品管理",cat:"安全",chap:"PPE管理(EHS7.1)",src_text:"个人防护用品按防护部位分类：头部（安全帽）、呼吸（口罩/面罩）、眼面（护目镜）、听力（耳塞/耳罩）、手部（手套）、足部（安全鞋）、身体（防护服）、防坠落（安全带）等。",hl:"头部、呼吸、眼面、听力、手部、足部、身体、防坠落"},
+  {id:"sa07",q:"危险化学品安全管理要点？",a:"分类储存、MSDS（安全数据表）现场配备、限量存放、双人双锁管理。",src:"EHS4.1危险化学品管理",cat:"安全",chap:"危化品管理(EHS4.1)",src_text:"危险化学品管理要点：分类分库存放；现场配备MSDS；限量存放；剧毒品实行双人收发、双人保管、双人使用、双人运输、双把锁（五双制度）。",hl:"分类储存、MSDS、限量存放、双人双锁"},
+  {id:"zz01",q:"三重一大决策制度指哪三重哪一大？",a:"重大决策、重要干部任免、重大项目安排、大额资金使用。",src:"组织管理相关规定",cat:"组织",chap:"三重一大",src_text:"三重一大：重大决策事项、重要干部任免事项、重大项目安排事项、大额资金使用事项，须经集体讨论做出决定。",hl:"重大决策、重要干部任免、重大项目安排、大额资金使用"},
+  {id:"zz02",q:"三重一大决策程序中总经理办公会参会要求？",a:"三分之二以上成员出席有效，总经理最后发言表态。",src:"组织管理相关规定",cat:"组织",chap:"三重一大",src_text:"总经理办公会须三分之二以上成员出席方可召开，总经理最后发言表态。",hl:"三分之二以上；总经理最后发言"},
+  {id:"zz03",q:"党委会前置研究的范围？",a:"重大经营管理事项须经党委会前置研究，党管干部、党管人才、重大改革、重大投资等。",src:"组织管理相关规定",cat:"组织",chap:"前置研究",src_text:"重大经营管理事项须经党委会前置研究讨论，包括党管干部、党管人才、重大改革、重大投资、重要制度等。",hl:"党管干部、党管人才、重大改革、重大投资"},
+  {id:"hp01",q:"HPDS五个阶段？",a:"目标制定→方针展开→对策落实→定期点检→年度总结",src:"HPDS管理手册",cat:"HPDS",chap:"HPDS流程",src_text:"HPDS五个阶段：目标制定、方针展开、对策落实、定期点检、年度总结，形成PDCA闭环。",hl:"目标制定→方针展开→对策落实→定期点检→年度总结"},
+  {id:"hp02",q:"方针展开的步骤？",a:"公司级目标→部门级目标→班组/个人目标，逐级分解展开。",src:"HPDS管理手册",cat:"HPDS",chap:"方针展开",src_text:"方针展开：公司级目标→部门级目标→班组级/个人级目标，逐级分解，确保上下一致。",hl:"公司→部门→班组/个人"},
+  {id:"fm01",q:"报销单涉及专票的税金如何处理？",a:"认证抵扣，不计入费用。价税分离（金额入费用，税金进项税额）。",src:"CA-CC0301差旅费开支规定D2",cat:"表单",chap:"费用报销",src_text:"涉及增值税专用发票的报销，认证抵扣后税金不计入费用。价税分离：金额部分计入费用，税金部分计入进项税额。",hl:"认证抵扣，价税分离"},
+  {id:"fm02",q:"合同归档要件有哪些？",a:"合同正本+审批表+对方签约人授权书(如非法人)+营业执照副本+法律审查意见(如需)",src:"CA-LA法律事务管理",cat:"表单",chap:"合同归档",src_text:"合同归档要件：合同正本、合同审批表、对方签约人授权书（如非法定代表人）、对方营业执照副本、法律审查意见书（如需）。",hl:"合同正本+审批表+授权书+营业执照+法律意见"}
+];
+
+// ===== STORAGE =====
+function getJpProgress(){try{return JSON.parse(localStorage.getItem('jp_progress'))||{}}catch(e){return{}}}
+function setJpProgress(p){localStorage.setItem('jp_progress',JSON.stringify(p))}
+function getFcProgress(){try{return JSON.parse(localStorage.getItem('fc_progress'))||{}}catch(e){return{}}}
+function setFcProgress(p){localStorage.setItem('fc_progress',JSON.stringify(p))}
+
+// ===== JAPANESE =====
+function today(){return new Date().toISOString().slice(0,10)}
+function tomorrow(){const d=new Date();d.setDate(d.getDate()+1);return d.toISOString().slice(0,10)}
+function addDays(d,n){const dt=new Date(d);dt.setDate(dt.getDate()+n);return dt.toISOString().slice(0,10)}
+
+function getJpState(lineId){
+  const p=getJpProgress();
+  if(!p[lineId])return {status:'locked',cycle:0,reviews:0,unlockedAt:null,lastReview:null,nextReview:null};
+  return p[lineId];
+}
+function saveJpState(lineId,s){
+  const p=getJpProgress();p[lineId]=s;setJpProgress(p);
+}
+function isDue(s){
+  if(s.status==='active')return s.nextReview&&s.nextReview<=today();
+  if(s.status==='forgotten')return s.nextReview&&s.nextReview<=today();
+  return false;
+}
+function renderJapanese(){
+  const pg=getJpProgress();
+  const total=JAPANESE_SONG.lines.length;
+  let locked=0,active=0,completed=0,waiting=0,forgotten=0;
+  JAPANESE_SONG.lines.forEach(l=>{
+    const s=pg[l.id]||{status:'locked'};
+    if(s.status==='locked')locked++;
+    else if(s.status==='completed')completed++;
+    else if(s.status==='waiting'||(s.status==='active'&&!isDue(s)))waiting++;
+    else if(s.status==='forgotten'&&!isDue(s))forgotten++;
+    else if(s.status==='active'||isDue(s))active++;
+  });
+  document.getElementById('jp-stats').innerHTML=
+    `<div class="stat">🔒 <span class="num">${locked}</span><br>未解锁</div>`+
+    `<div class="stat">⭐ <span class="num">${active}</span><br>待复习</div>`+
+    `<div class="stat">⏳ <span class="num">${waiting}</span><br>等待中</div>`+
+    `<div class="stat">✅ <span class="num">${completed}</span><br>已完成</div>`;
+  document.getElementById('jp-badge').textContent=active;
+
+  let html='';
+  JAPANESE_SONG.lines.forEach((l,i)=>{
+    const s=getJpState(l.id);
+    const cls=s.status==='locked'?'locked':s.status==='completed'?'completed':(isDue(s)?'active':(s.status==='forgotten'?'forgotten':''));
+    const statusLabel={locked:'🔒 未解锁','active':'⭐ 待复习',waiting:'⏳ 等待中',completed:'✅ 已完成',forgotten:'🔄 明天重试'}[s.status]||s.status;
+    let dots='';
+    for(let c=0;c<6;c++){
+      if(c<s.cycle)dots+=`<span class="dot done"></span>`;
+      else if(c===s.cycle&&s.status==='forgotten'&&s.cycle>0)dots+=`<span class="dot fail"></span>`;
+      else dots+=`<span class="dot"></span>`;
+    }
+    const idx=i+1;
+    html+=`<div class="lyric-card ${cls}" id="jp-${l.id}">
+      <div class="card-header">
+        <span class="line-num">#${idx}</span>
+        <span class="cycle-dots">${dots}</span>
+      </div>
+      <div class="japanese-text">${l.japanese}</div>
+      <div class="reading-text">${l.reading}</div>
+      <div><span class="status-badge ${s.status}">${statusLabel}</span> ${s.reviews>0?`<span style="font-size:11px;color:var(--dim)">复习${s.reviews}次</span>`:''}</div>
+      <div class="action-row unlock-area" style="${s.status!=='locked'?'display:none':''}">
+        <button class="btn btn-sm" onclick="unlockLine('${l.id}')">🔓 解锁开启复习</button>
+      </div>
+      <div class="action-row" style="${s.status==='locked'?'display:none':''}">
+        ${(isDue(s)&&(s.status==='active'||s.status==='forgotten'))?`
+          <button class="btn btn-sm btn-green" onclick="reviewJp('${l.id}','remember')">✅ 记住了</button>
+          <button class="btn btn-sm btn-red" onclick="reviewJp('${l.id}','forgot')">🔄 忘了</button>
+        `:s.status==='waiting'?`<span style="font-size:13px;color:var(--dim)">下次复习：${s.nextReview||'待定'}</span>`:''}
+        <button class="btn btn-sm btn-dim" onclick="resetLine('${l.id}')">🔄 重置</button>
+      </div>
+      <div class="expand-toggle" onclick="toggleExpand('jp-expand-${l.id}')">👆 点击展开详情</div>
+      <div class="expand-content" id="jp-expand-${l.id}">
+        <div class="chinese-text">${l.chinese}</div>
+        <div class="words-section"><div class="word-grid">${l.words.map(w=>`<div class="word-item"><span class="word-kanji">${w[0]}</span><span class="word-reading">${w[1]}</span><span class="word-meaning"> — ${w[2]}</span></div>`).join('')}</div></div>
+        <div class="grammar-section">${l.grammar.replace(/\n/g,'<br>')}</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('jp-cards').innerHTML=html;
+}
+function unlockLine(id){
+  const s={status:'active',cycle:0,reviews:0,unlockedAt:today(),lastReview:null,nextReview:tomorrow()};
+  saveJpState(id,s);renderJapanese();
+}
+function reviewJp(id,action){
+  const s=getJpState(id);
+  if(action==='remember'){
+    s.cycle++;s.reviews=(s.reviews||0)+1;
+    s.lastReview=today();s.status='waiting';
+    if(s.cycle>=6){s.status='completed';s.nextReview=null;}
+    else{s.nextReview=addDays(today(),EBBINGHAUS[s.cycle-1]);}
+  }else{
+    s.reviews=(s.reviews||0)+1;s.lastReview=today();s.status='forgotten';s.nextReview=tomorrow();
+  }
+  saveJpState(id,s);renderJapanese();
+}
+function resetLine(id){
+  const s={status:'locked',cycle:0,reviews:0,unlockedAt:null,lastReview:null,nextReview:null};
+  saveJpState(id,s);renderJapanese();
+}
+function resetAllJapanese(){
+  if(!confirm('确定全部重置？所有复习进度将清零。'))return;
+  setJpProgress({});renderJapanese();
+}
+
+// ===== FLASHCARDS =====
+function renderFlashcards(){
+  const pg=getFcProgress();
+  const total=FLASHCARDS.length;
+  let known=0,activeCount=0;
+  FLASHCARDS.forEach(f=>{
+    const s=pg[f.id];
+    if(!s){activeCount++;return}
+    if(s.status==='known')known++;
+    else activeCount++;
+  });
+  document.getElementById('fc-stats').innerHTML=
+    `<div class="stat">📋 <span class="num">${total}</span><br>总题数</div>`+
+    `<div class="stat">📚 <span class="num">${activeCount}</span><br>待复习</div>`+
+    `<div class="stat">✅ <span class="num">${known}</span><br>已掌握</div>`;
+  document.getElementById('fc-badge').textContent=activeCount;
+
+  let html='';
+  FLASHCARDS.forEach(f=>{
+    const s=pg[f.id];
+    const done=s&&s.status==='known';
+    const revCount=s?((s.count||0)+(s.forgottenCount||0)||0):0;
+    const isNew=!s;
+    html+=`<div class="fcard ${done?'done':''}" id="fc-${f.id}">
+      <div>
+        <span class="cat-tag cat-${f.cat}">${f.cat}</span>
+        <span style="font-size:11px;color:var(--dim)">${f.chap}</span>
+      </div>
+      <div class="q">${isNew?'❓ ':'🔄 '}${f.q}</div>
+      <div class="src">📎 ${f.src}</div>
+      ${done?`<div style="margin-top:6px;font-size:12px;color:var(--green)">✅ 已掌握</div>`:`
+      <div class="a-wrap" id="fc-answer-${f.id}">
+        <div class="answer">${f.a}</div>
+        <div class="src-text">${f.src_text.replace(f.hl,`<span class="hl">${f.hl}</span>`)}</div>
+        ${f.hl?`<div style="font-size:11px;color:var(--gold);margin-top:4px">💡 ${f.hl}</div>`:''}
+        ${revCount>0?`<div class="review-count">已复习 ${revCount} 次</div>`:''}
+        <div class="fc-actions">
+          <button class="btn btn-green btn-sm" onclick="reviewFc('${f.id}','known')">✅ 我知道了</button>
+          <button class="btn btn-outline btn-sm" onclick="reviewFc('${f.id}','review')">🔁 7天后再考</button>
+          <button class="btn btn-dim btn-sm" onclick="resetFc('${f.id}')">🔄 重置为未复习</button>
+        </div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="toggleAnswer('${f.id}')" style="margin-top:8px">👆 查看答案</button>`}
+    </div>`;
+  });
+  document.getElementById('fc-cards').innerHTML=html;
+}
+function toggleAnswer(id){
+  const el=document.getElementById('fc-answer-'+id);
+  if(el)el.classList.toggle('show');
+}
+function reviewFc(id,action){
+  const pg=getFcProgress();
+  if(!pg[id])pg[id]={count:0,forgottenCount:0,status:'learning'};
+  if(action==='known'){pg[id].count=(pg[id].count||0)+1;pg[id].status='known';}
+  else{pg[id].forgottenCount=(pg[id].forgottenCount||0)+1;pg[id].status='learning';}
+  setFcProgress(pg);
+  document.getElementById('fc-answer-'+id).classList.remove('show');
+  renderFlashcards();
+}
+function resetFc(id){
+  const pg=getFcProgress();
+  delete pg[id];setFcProgress(pg);
+  document.getElementById('fc-answer-'+id).classList.remove('show');
+  renderFlashcards();
+}
+
+// ===== NAV =====
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));
+  if(name==='japanese')renderJapanese();
+  else renderFlashcards();
+}
+function toggleExpand(id){
+  const el=document.getElementById(id);
+  if(el)el.classList.toggle('show');
+}
+
+// ===== INIT =====
+renderJapanese();
+renderFlashcards();
+</script>
+</body>
+</html>
