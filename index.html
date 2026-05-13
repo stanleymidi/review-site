@@ -65,28 +65,43 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .grammar-section{background:rgba(232,168,76,.06);border-radius:8px;padding:10px;margin:8px 0;font-size:13px;line-height:1.5;color:#ddd}
 .grammar-section strong{color:var(--gold)}
 
-/* Flashcard styles */
-.flashcard-list{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
-.fcard{background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);cursor:pointer;transition:.3s;position:relative}
-.fcard .q{font-size:15px;margin-bottom:8px;line-height:1.4}
-.fcard .cat-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin-right:4px}
-.cat-内控{background:rgba(232,168,76,.2);color:var(--gold)}
-.cat-质量{background:rgba(74,158,255,.2);color:var(--blue)}
-.cat-安全{background:rgba(106,191,106,.2);color:#6abf6a}
-.cat-组织{background:rgba(155,89,182,.2);color:#9b59b6}
-.cat-HPDS{background:rgba(52,152,219,.2);color:#3498db}
-.cat-表单{background:rgba(231,76,60,.2);color:#e74c3c}
-.cat-两化融合{background:rgba(26,188,156,.2);color:#1abc9c}
-.fcard .src{font-size:11px;color:var(--dim);margin-top:6px}
-.fcard .a-wrap{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
-.fcard .a-wrap.show{display:block}
-.fcard .answer{color:#b8d4b8;font-size:14px;line-height:1.5;margin-bottom:8px}
-.fcard .src-text{background:rgba(255,255,255,.03);border-radius:6px;padding:8px;font-size:12px;color:#999;line-height:1.5;margin:6px 0;border-left:3px solid var(--gold)}
-.fcard .src-text .hl{color:var(--gold);font-weight:700}
-.fcard .fc-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.fcard .fc-actions .btn{font-size:12px;padding:7px 14px}
-.fcard.done{opacity:.25;pointer-events:none}
-.fcard .review-count{font-size:11px;color:var(--dim);margin-top:6px}
+/* Flashcard styles — 单卡片翻转（复刻内网版） */
+#fc-panel-inner{max-width:860px;margin:0 auto;display:flex;flex-direction:column;align-items:center}
+.fc-card-wrap{width:100%;max-width:820px;perspective:1500px;height:450px;cursor:pointer;margin:10px 0}
+.fc-card{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d;transform-origin:center center}
+.fc-card.flipped{transform:rotateY(180deg)}
+.fc-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:25px 40px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.fc-front{background:linear-gradient(145deg,#1e3a5f,#2a5298);border:1px solid rgba(255,255,255,.1)}
+.fc-front .fc-label{font-size:12px;color:#8ab4f8;margin-bottom:16px;letter-spacing:2px;text-transform:uppercase}
+.fc-front .fc-question{font-size:22px;line-height:1.6;color:#fff;font-weight:500;max-width:90%}
+.fc-front .fc-hint{font-size:13px;color:#6a8fbb;margin-top:20px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+.fc-back{background:linear-gradient(145deg,#1a2a1a,#2a4a2a);border:1px solid rgba(100,200,100,.15);transform:rotateY(180deg);justify-content:flex-start;padding:20px 30px;overflow-y:auto}
+.fc-back .bc-question{font-size:15px;color:#b0c4de;text-align:left;width:100%;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.1);font-weight:500}
+.fc-back .ans-label{font-size:11px;color:#6abf6a;letter-spacing:2px;margin-bottom:10px;width:100%;text-align:left}
+.fc-back .ans-text{font-size:17px;line-height:1.7;color:#d4edda;text-align:left;width:100%}
+.fc-back .src-original{width:100%;margin-top:8px;margin-bottom:4px;background:rgba(0,0,0,.25);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.6;color:#b0b8c0;word-break:break-word;overflow-wrap:break-word;flex-shrink:0;text-align:left}
+.fc-back .src-original .kw{color:#f0c060;font-weight:600}
+.fc-back .src-box{margin-top:10px;width:100%;background:rgba(0,0,0,.3);border-radius:10px;padding:12px 15px;border-left:3px solid #e8a84c;text-align:left}
+.fc-back .src-box .sl{font-size:11px;color:#e8a84c}
+.fc-back .src-box .st{font-size:13px;color:#ccc;margin-top:3px}
+.fc-back .src-box .tags{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.fc-back .src-box .tag{font-size:11px;padding:2px 10px;border-radius:12px;background:rgba(232,168,76,.2);color:#e8a84c}
+.fc-back .fc-rc{font-size:11px;color:#666;margin-top:8px;width:100%;text-align:left}
+/* 按钮行 */
+.fc-btns{display:none;gap:12px;margin-top:12px;width:100%}
+.fc-btns.show{display:flex}
+.fc-btn{flex:1;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.fc-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,.3)}
+.fc-btn-revisit{background:linear-gradient(135deg,#e8a84c,#d4893a);color:#1a1a2e}
+.fc-btn-know{background:linear-gradient(135deg,#4a7a4a,#3a6a3a);color:#d4edda}
+.fc-btn-dismiss{background:linear-gradient(135deg,#6a3a3a,#5a2a2a);color:#e8b4b4}
+.fc-empty{text-align:center;padding:60px 20px;color:#6a8fbb}
+.fc-empty h2{font-size:28px;margin-bottom:10px}
+.fc-legend{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:20px;font-size:12px}
+.fc-legend-item{display:flex;align-items:center;gap:5px;color:#888}
+.fc-legend-dot{width:10px;height:10px;border-radius:50%}
+@media(max-width:600px){.fc-card-wrap{height:350px}.fc-front .fc-question{font-size:18px}.fc-back .ans-text{font-size:15px}.fc-btn{font-size:13px;padding:10px}}
 .text-center{text-align:center}
 .mt-8{margin-top:8px}
 
@@ -157,8 +172,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <h1>📋 制度文件卡片</h1>
     <div class="sub">汇众汽车 — 52道制度知识题</div>
   </div>
-  <div class="stats" id="fc-stats"></div>
-  <div class="flashcard-list" id="fc-cards"></div>
+  <div id="fc-panel-inner">
+    <div class="stats" id="fc-stats"></div>
+    <div class="fc-card-wrap" id="fcCardWrap" style="display:none" onclick="fcFlip()">
+      <div class="fc-card" id="fcCard">
+        <div class="fc-face fc-front">
+          <div class="fc-label">❓ 请回答</div>
+          <div class="fc-question" id="fcQuestion">加载中...</div>
+          <div class="fc-hint" id="fcHint">👆 点击卡片翻转</div>
+        </div>
+        <div class="fc-face fc-back">
+          <div class="bc-question" id="fcBackQ"></div>
+          <div class="ans-label">✅ 参考答案</div>
+          <div class="ans-text" id="fcAnswer"></div>
+          <div class="src-original" id="fcSrcOrig" style="display:none"></div>
+          <div class="src-box">
+            <div class="sl">📎 出处</div>
+            <div class="st" id="fcSource"></div>
+            <div class="tags"><span class="tag" id="fcCat"></span><span class="tag" id="fcChap"></span></div>
+          </div>
+          <div class="fc-rc" id="fcRc"></div>
+          <div class="fc-btns" id="fcBtns">
+            <button class="fc-btn fc-btn-revisit" onclick="event.stopPropagation();fcReview('revisit')">🔁 近期再考考</button>
+            <button class="fc-btn fc-btn-know" onclick="event.stopPropagation();fcReview('know')">✅ 我知道了</button>
+            <button class="fc-btn fc-btn-dismiss" onclick="event.stopPropagation();fcReview('dismiss')">✖ 这题不要了</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="fcEmpty" class="fc-empty" style="display:none">
+      <h2>🎉</h2>
+      <p id="fcEmptyMsg"></p>
+    </div>
+    <div class="fc-legend" id="fcLegend"></div>
+  </div>
 </div>
 
 <script>
@@ -278,8 +325,6 @@ const FLASHCARDS = [
 // ===== STORAGE =====
 function getJpProgress(){try{return JSON.parse(localStorage.getItem('jp_progress'))||{}}catch(e){return{}}}
 function setJpProgress(p){localStorage.setItem('jp_progress',JSON.stringify(p))}
-function getFcProgress(){try{return JSON.parse(localStorage.getItem('fc_progress'))||{}}catch(e){return{}}}
-function setFcProgress(p){localStorage.setItem('fc_progress',JSON.stringify(p))}
 
 // ===== JAPANESE =====
 function today(){return new Date().toISOString().slice(0,10)}
@@ -383,79 +428,110 @@ function resetAllJapanese(){
   setJpProgress({});renderJapanese();
 }
 
-// ===== FLASHCARDS =====
-function renderFlashcards(){
-  const pg=getFcProgress();
-  const total=FLASHCARDS.length;
-  let known=0,activeCount=0;
+// ===== FLASHCARDS — 单卡片翻转 =====
+const FCAT_ORDER={'内控':0,'质量':1,'安全':2,'组织':3,'HPDS':4,'表单':5,'两化融合':6};
+const FCOLORS={'内控':'#e8a84c','质量':'#4a9eff','安全':'#6abf6a','组织':'#9b59b6','HPDS':'#3498db','表单':'#e74c3c','两化融合':'#1abc9c'};
+let fcQueue=[],fcIdx=0,fcFlipped=false,fcCardId=null;
+
+function fcGetP(){try{return JSON.parse(localStorage.getItem('fc_progress'))||{}}catch(e){return{}}}
+function fcSetP(p){localStorage.setItem('fc_progress',JSON.stringify(p))}
+function fcCatColor(c){return FCOLORS[c]||'#888'}
+
+function fcRefresh(){
+  const pg=fcGetP();const today=today();
+  // 收集待复习卡片
+  let cards=[];
   FLASHCARDS.forEach(f=>{
     const s=pg[f.id];
-    if(!s){activeCount++;return}
-    if(s.status==='known')known++;
-    else activeCount++;
+    if(s&&s.status==='known')return;
+    if(s&&s.nextReview&&s.nextReview>today)return;
+    cards.push(f);
   });
-  document.getElementById('fc-stats').innerHTML=
-    `<div class="stat">📋 <span class="num">${total}</span><br>总题数</div>`+
-    `<div class="stat">📚 <span class="num">${activeCount}</span><br>待复习</div>`+
-    `<div class="stat">✅ <span class="num">${known}</span><br>已掌握</div>`;
-  document.getElementById('fc-badge').textContent=activeCount;
+  fcQueue=cards.sort((a,b)=>(FCAT_ORDER[a.cat]||9)-(FCAT_ORDER[b.cat]||9));
+  fcIdx=0;fcFlipped=false;fcCardId=null;
+  fcShowStats();
+  fcRenderLegend();
+  fcShowCard();
+}
 
-  let html='';
+function fcShowStats(){
+  const pg=fcGetP();const total=FLASHCARDS.length;
+  let known=0,due=0;const byCat={};
   FLASHCARDS.forEach(f=>{
     const s=pg[f.id];
-    const done=s&&s.status==='known';
-    const revCount=s?((s.count||0)+(s.forgottenCount||0)||0):0;
-    const isNew=!s;
-    html+=`<div class="fcard ${done?'done':''}" id="fc-${f.id}">
-      <div>
-        <span class="cat-tag cat-${f.cat}">${f.cat}</span>
-        <span style="font-size:11px;color:var(--dim)">${f.chap}</span>
-      </div>
-      <div class="q">${isNew?'❓ ':'🔄 '}${f.q}</div>
-      <div class="src">📎 ${f.src}</div>
-      ${done?`<div style="margin-top:6px;font-size:12px;color:var(--green)">✅ 已掌握</div>`:`
-      <div class="a-wrap" id="fc-answer-${f.id}">
-        <div class="answer">${f.a}</div>
-        <div class="src-text">${f.src_text.replace(f.hl,`<span class="hl">${f.hl}</span>`)}</div>
-        ${f.hl?`<div style="font-size:11px;color:var(--gold);margin-top:4px">💡 ${f.hl}</div>`:''}
-        ${revCount>0?`<div class="review-count">已复习 ${revCount} 次</div>`:''}
-        <div class="fc-actions">
-          <button class="btn btn-green btn-sm" onclick="reviewFc('${f.id}','known')">✅ 我知道了</button>
-          <button class="btn btn-outline btn-sm" onclick="reviewFc('${f.id}','review')">🔁 7天后再考</button>
-          <button class="btn btn-dim btn-sm" onclick="resetFc('${f.id}')">🔄 重置为未复习</button>
-        </div>
-      </div>
-      <button class="btn btn-outline btn-sm" onclick="toggleAnswer('${f.id}')" style="margin-top:8px">👆 查看答案</button>`}
-    </div>`;
+    if(s&&s.status==='known'){known++;return}
+    if(s&&s.nextReview&&s.nextReview>today())return;
+    due++;byCat[f.cat]=(byCat[f.cat]||0)+1;
   });
-  document.getElementById('fc-cards').innerHTML=html;
-}
-function toggleAnswer(id){
-  const el=document.getElementById('fc-answer-'+id);
-  if(el)el.classList.toggle('show');
-}
-function reviewFc(id,action){
-  const pg=getFcProgress();
-  if(!pg[id])pg[id]={count:0,forgottenCount:0,status:'learning'};
-  if(action==='known'){pg[id].count=(pg[id].count||0)+1;pg[id].status='known';}
-  else{pg[id].forgottenCount=(pg[id].forgottenCount||0)+1;pg[id].status='learning';}
-  setFcProgress(pg);
-  document.getElementById('fc-answer-'+id).classList.remove('show');
-  renderFlashcards();
-}
-function resetFc(id){
-  const pg=getFcProgress();
-  delete pg[id];setFcProgress(pg);
-  document.getElementById('fc-answer-'+id).classList.remove('show');
-  renderFlashcards();
+  let html='<div class="stat">📋 <span class="num">'+total+'</span><br>总题数</div>';
+  html+='<div class="stat">📚 <span class="num">'+due+'</span><br>待复习</div>';
+  html+='<div class="stat">✅ <span class="num">'+known+'</span><br>已掌握</div>';
+  Object.keys(byCat).sort((a,b)=>FCAT_ORDER[a]-FCAT_ORDER[b]).forEach(k=>{
+    html+='<div class="stat" style="border-left:3px solid '+fcCatColor(k)+';padding-left:8px">'+k+'<br><span class="num">'+byCat[k]+'</span></div>';
+  });
+  document.getElementById('fc-stats').innerHTML=html;
+  document.getElementById('fc-badge').textContent=due;
 }
 
-// ===== NAV =====
+function fcShowCard(){
+  if(fcQueue.length===0||fcIdx>=fcQueue.length){
+    document.getElementById('fcCardWrap').style.display='none';
+    document.getElementById('fcEmpty').style.display='block';
+    document.getElementById('fcEmptyMsg').textContent='🎉 所有卡片都复习完了！明天再来吧。';
+    return;
+  }
+  const f=fcQueue[fcIdx];fcCardId=f.id;fcFlipped=false;
+  document.getElementById('fcCard').classList.remove('flipped');
+  document.getElementById('fcBtns').classList.remove('show');
+  document.getElementById('fcCardWrap').style.display='block';
+  document.getElementById('fcEmpty').style.display='none';
+  document.getElementById('fcQuestion').textContent=f.q;
+  document.getElementById('fcBackQ').textContent='❓ '+f.q;
+  document.getElementById('fcAnswer').textContent=f.a;
+  document.getElementById('fcSource').textContent=f.src;
+  document.getElementById('fcCat').textContent='📁 '+f.cat;
+  document.getElementById('fcCat').style.background=fcCatColor(f.cat)+'33';
+  document.getElementById('fcCat').style.color=fcCatColor(f.cat);
+  document.getElementById('fcChap').textContent='📖 '+f.chap;
+  const pg=fcGetP();const s=pg[f.id];
+  document.getElementById('fcRc').textContent=s?'已复习 '+((s.count||0)+(s.forgottenCount||0))+' 次':'';
+  // 出处原文
+  const srcEl=document.getElementById('fcSrcOrig');
+  if(f.src_text){
+    let txt=f.src_text;
+    if(f.hl)txt=txt.replace(f.hl,'<span class="kw">'+f.hl+'</span>');
+    srcEl.innerHTML='📄 '+txt;srcEl.style.display='block';
+  }else{srcEl.style.display='none'}
+}
+
+function fcFlip(){
+  if(fcFlipped)return;
+  document.getElementById('fcCard').classList.add('flipped');
+  document.getElementById('fcBtns').classList.add('show');
+  fcFlipped=true;
+}
+
+function fcReview(action){
+  if(!fcCardId)return;
+  const pg=fcGetP();const s=pg[fcCardId]||{count:0,forgottenCount:0};
+  const d=new Date();const iso=d.toISOString().slice(0,10);
+  if(action==='know'){s.count=(s.count||0)+1;s.status='known';s.nextReview=null;}
+  else if(action==='revisit'){s.forgottenCount=(s.forgottenCount||0)+1;s.status='learning';d.setDate(d.getDate()+7);s.nextReview=d.toISOString().slice(0,10);}
+  else if(action==='dismiss'){delete pg[fcCardId];fcSetP(pg);fcRefresh();return;}
+  pg[fcCardId]=s;fcSetP(pg);
+  fcIdx++;fcShowCard();fcShowStats();
+}
+
+function fcRenderLegend(){
+  const cats={};FLASHCARDS.forEach(f=>{cats[f.cat]=true});
+  const order=Object.keys(cats).sort((a,b)=>FCAT_ORDER[a]-FCAT_ORDER[b]);
+  document.getElementById('fcLegend').innerHTML=order.map(k=>'<div class="fc-legend-item"><div class="fc-legend-dot" style="background:'+fcCatColor(k)+'"></div> '+k+'</div>').join('');
+}
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));
   if(name==='japanese')renderJapanese();
-  else renderFlashcards();
+  else fcRefresh();
 }
 function toggleExpand(id){
   const el=document.getElementById(id);
@@ -464,7 +540,7 @@ function toggleExpand(id){
 
 // ===== INIT =====
 renderJapanese();
-renderFlashcards();
+fcRefresh();
 </script>
 </body>
 </html>
