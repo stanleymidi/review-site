@@ -393,7 +393,7 @@ function renderJapanese(){
         `:s.status==='waiting'?`<span style="font-size:13px;color:var(--dim)">下次复习：${s.nextReview||'待定'}</span>`:''}
         <button class="btn btn-sm btn-dim" onclick="resetLine('${l.id}')">🔄 重置</button>
       </div>
-      <div class="expand-toggle" onclick="toggleExpand('jp-expand-${l.id}')">👆 点击展开详情</div>
+      <div class="expand-toggle" onclick="toggleExpand('jp-expand-${l.id}')" style="${s.status==='locked'?'display:none':''}">👆 点击展开详情</div>
       <div class="expand-content" id="jp-expand-${l.id}">
         <div class="chinese-text">${l.chinese}</div>
         <div class="words-section"><div class="word-grid">${l.words.map(w=>`<div class="word-item"><span class="word-kanji">${w[0]}</span><span class="word-reading">${w[1]}</span><span class="word-meaning"> — ${w[2]}</span></div>`).join('')}</div></div>
@@ -404,7 +404,7 @@ function renderJapanese(){
   document.getElementById('jp-cards').innerHTML=html;
 }
 function unlockLine(id){
-  const s={status:'active',cycle:0,reviews:0,unlockedAt:today(),lastReview:null,nextReview:tomorrow()};
+  const s={status:'active',cycle:0,reviews:0,unlockedAt:today(),lastReview:null,nextReview:today()};
   saveJpState(id,s);renderJapanese();
 }
 function reviewJp(id,action){
@@ -535,7 +535,11 @@ function switchTab(name){
 }
 function toggleExpand(id){
   const el=document.getElementById(id);
-  if(el)el.classList.toggle('show');
+  if(!el)return;
+  // 检查对应的卡片是否已解锁
+  const card=el.closest('.lyric-card');
+  if(card&&card.classList.contains('locked'))return;
+  el.classList.toggle('show');
 }
 
 // ===== INIT =====
