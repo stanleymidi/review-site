@@ -366,7 +366,7 @@ function renderJapanese(){
   let html='';
   JAPANESE_SONG.lines.forEach((l,i)=>{
     const s=getJpState(l.id);
-    const cls=s.status==='locked'?'locked':s.status==='completed'?'completed':(isDue(s)?'active':(s.status==='forgotten'?'forgotten':''));
+    const cls=s.status==='locked'?'locked':s.status==='completed'?'completed':s.status==='active'?'active':(isDue(s)&&s.status==='forgotten'?'active':s.status==='forgotten'?'forgotten':'');
     const statusLabel={locked:'🔒 未解锁','active':'⭐ 待复习',waiting:'⏳ 等待中',completed:'✅ 已完成',forgotten:'🔄 明天重试'}[s.status]||s.status;
     let dots='';
     for(let c=0;c<6;c++){
@@ -387,13 +387,13 @@ function renderJapanese(){
         <button class="btn btn-sm" onclick="unlockLine('${l.id}')">🔓 解锁开启复习</button>
       </div>
       <div class="action-row" style="${s.status==='locked'?'display:none':''}">
-        ${(isDue(s)&&(s.status==='active'||s.status==='forgotten'))?`
+        ${(s.status==='active'||(isDue(s)&&s.status==='forgotten'))?`
           <button class="btn btn-sm btn-green" onclick="reviewJp('${l.id}','remember')">✅ 记住了</button>
           <button class="btn btn-sm btn-red" onclick="reviewJp('${l.id}','forgot')">🔄 忘了</button>
         `:s.status==='waiting'?`<span style="font-size:13px;color:var(--dim)">下次复习：${s.nextReview||'待定'}</span>`:''}
         <button class="btn btn-sm btn-dim" onclick="resetLine('${l.id}')">🔄 重置</button>
       </div>
-      <div class="expand-toggle" onclick="toggleExpand('jp-expand-${l.id}')" style="${s.status==='locked'?'display:none':''}">👆 点击展开详情</div>
+      <div class="expand-toggle" onclick="var c=document.getElementById('jp-${l.id}');if(c&&c.classList.contains('locked'))return;toggleExpand('jp-expand-${l.id}')" style="${s.status==='locked'?'display:none':''}">👆 点击展开详情</div>
       <div class="expand-content" id="jp-expand-${l.id}">
         <div class="chinese-text">${l.chinese}</div>
         <div class="words-section"><div class="word-grid">${l.words.map(w=>`<div class="word-item"><span class="word-kanji">${w[0]}</span><span class="word-reading">${w[1]}</span><span class="word-meaning"> — ${w[2]}</span></div>`).join('')}</div></div>
