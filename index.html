@@ -76,7 +76,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .fc-front .fc-question{font-size:22px;line-height:1.6;color:#fff;font-weight:500;max-width:90%}
 .fc-front .fc-hint{font-size:13px;color:#6a8fbb;margin-top:20px;animation:pulse 2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
-.fc-back{background:linear-gradient(145deg,#1a2a1a,#2a4a2a);border:1px solid rgba(100,200,100,.15);transform:rotateY(180deg);justify-content:flex-start;padding:20px 30px;overflow-y:auto}
+.fc-back{background:linear-gradient(145deg,#1a2a1a,#2a4a2a);border:1px solid rgba(100,200,100,.15);transform:rotateY(180deg);justify-content:flex-start;padding:20px 30px 8px}
+.fc-back-scroll{flex:1;overflow-y:auto;width:100%;-webkit-overflow-scrolling:touch}
 .fc-back .bc-question{font-size:15px;color:#b0c4de;text-align:left;width:100%;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.1);font-weight:500}
 .fc-back .ans-label{font-size:11px;color:#6abf6a;letter-spacing:2px;margin-bottom:10px;width:100%;text-align:left}
 .fc-back .ans-text{font-size:17px;line-height:1.7;color:#d4edda;text-align:left;width:100%}
@@ -89,7 +90,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .fc-back .src-box .tag{font-size:11px;padding:2px 10px;border-radius:12px;background:rgba(232,168,76,.2);color:#e8a84c}
 .fc-back .fc-rc{font-size:11px;color:#666;margin-top:8px;width:100%;text-align:left}
 /* 按钮行 */
-.fc-btns{display:none;gap:12px;margin-top:12px;width:100%}
+.fc-btns{display:none;gap:12px;margin-top:12px;width:100%;flex-shrink:0}
 .fc-btns.show{display:flex}
 .fc-btn{flex:1;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
 .fc-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,.3)}
@@ -182,16 +183,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div class="fc-hint" id="fcHint">👆 点击卡片翻转</div>
         </div>
         <div class="fc-face fc-back">
-          <div class="bc-question" id="fcBackQ"></div>
-          <div class="ans-label">✅ 参考答案</div>
-          <div class="ans-text" id="fcAnswer"></div>
-          <div class="src-original" id="fcSrcOrig" style="display:none"></div>
-          <div class="src-box">
-            <div class="sl">📎 出处</div>
-            <div class="st" id="fcSource"></div>
-            <div class="tags"><span class="tag" id="fcCat"></span><span class="tag" id="fcChap"></span></div>
+          <div class="fc-back-scroll">
+            <div class="bc-question" id="fcBackQ"></div>
+            <div class="ans-label">✅ 参考答案</div>
+            <div class="ans-text" id="fcAnswer"></div>
+            <div class="src-original" id="fcSrcOrig" style="display:none"></div>
+            <div class="src-box">
+              <div class="sl">📎 出处</div>
+              <div class="st" id="fcSource"></div>
+              <div class="tags"><span class="tag" id="fcCat"></span><span class="tag" id="fcChap"></span></div>
+            </div>
+            <div class="fc-rc" id="fcRc"></div>
           </div>
-          <div class="fc-rc" id="fcRc"></div>
           <div class="fc-btns" id="fcBtns">
             <button class="fc-btn fc-btn-revisit" onclick="event.stopPropagation();fcReview('revisit')">🔁 近期再考考</button>
             <button class="fc-btn fc-btn-know" onclick="event.stopPropagation();fcReview('know')">✅ 我知道了</button>
@@ -506,8 +509,11 @@ function fcShowCard(){
 
 function fcFlip(){
   if(fcFlipped)return;
-  document.getElementById('fcCard').classList.add('flipped');
-  document.getElementById('fcBtns').classList.add('show');
+  const card=document.getElementById('fcCard');
+  const btns=document.getElementById('fcBtns');
+  if(!card||!btns)return;
+  card.classList.add('flipped');
+  btns.classList.add('show');
   fcFlipped=true;
 }
 
@@ -545,6 +551,15 @@ function toggleExpand(id){
 // ===== INIT =====
 renderJapanese();
 fcRefresh();
+// 使用addEventListener确保翻转点击在3D变换环境中可靠触发
+document.getElementById('fcCardWrap').addEventListener('click',function(e){
+  // 如果点击来自按钮内部（有stopPropagation），不触发翻转
+  fcFlip();
+});
+// 阻止fcCardWrap上的点击事件干扰按钮点击（备选防御）
+document.getElementById('fcBtns').addEventListener('click',function(e){
+  e.stopPropagation();
+});
 </script>
 </body>
 </html>
