@@ -27,6 +27,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .btn-red{background:var(--red);color:#fff}
 .btn-dim{background:var(--border);color:var(--dim)}
 .btn-outline{background:transparent;border:1px solid var(--gold);color:var(--gold)}
+.btn-plan{font-size:12px;opacity:.7;border-color:var(--dim);color:var(--dim);padding:4px 12px}
+.btn-plan:hover{opacity:1;border-color:var(--gold);color:var(--gold)}
+.plan-row{margin-top:4px;display:flex}
+.adj-panel{display:none;gap:8px;align-items:center;margin-top:6px;padding:6px 10px;background:rgba(232,168,76,.06);border-radius:8px}
+.adj-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--gold);background:transparent;color:var(--gold);font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;line-height:1}
+.adj-btn:hover{background:var(--gold);color:#111}
+.adj-count{font-size:18px;font-weight:700;color:var(--gold);min-width:32px;text-align:center}
+.adj-confirm{padding:4px 18px;font-size:13px}
 .card-grid{display:flex;flex-direction:column;gap:10px;max-width:600px;margin:0 auto}
 .lyric-card{background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);transition:.3s}
 .lyric-card.locked{opacity:.35}
@@ -397,6 +405,15 @@ function renderJapanese(){
         `:s.status==='waiting'?`<span style="font-size:13px;color:var(--dim)">下次复习：${s.nextReview||'待定'}</span>`:''}
         <button class="btn btn-sm btn-dim" onclick="resetLine('${l.id}')">🔄 重置</button>
       </div>
+      <div class="plan-row">
+        <button class="btn btn-sm btn-outline btn-plan" onclick="planAdjust('${l.id}')">📋 计划手动调整</button>
+      </div>
+      <div class="adj-panel" id="adj-${l.id}">
+        <button class="adj-btn" onclick="adjustCycle('${l.id}',-1)">−</button>
+        <span class="adj-count" id="adjc-${l.id}">${s.cycle}</span>
+        <button class="adj-btn" onclick="adjustCycle('${l.id}',1)">+</button>
+        <button class="btn btn-sm btn-green adj-confirm" onclick="confirmAdjust('${l.id}')">确认</button>
+      </div>
       <div class="expand-toggle" onclick="var c=document.getElementById('jp-${l.id}');if(c&&c.classList.contains('locked'))return;toggleExpand('jp-expand-${l.id}')" style="${s.status==='locked'?'display:none':''}">👆 点击展开详情</div>
       <div class="expand-content" id="jp-expand-${l.id}">
         <div class="chinese-text">${l.chinese}</div>
@@ -430,6 +447,46 @@ function resetLine(id){
 function resetAllJapanese(){
   if(!confirm('确定全部重置？所有复习进度将清零。'))return;
   setJpProgress({});renderJapanese();
+}
+const adjTemp = {};
+function planAdjust(id) {
+  const s = getJpState(id);
+  if (s.status === 'locked') {
+    unlockLine(id);
+    const s2 = getJpState(id);
+    adjTemp[id] = s2.cycle;
+  } else {
+    adjTemp[id] = s.cycle;
+  }
+  const panel = document.getElementById('adj-'+id);
+  if (panel.style.display === 'flex') {
+    panel.style.display = 'none';
+    delete adjTemp[id];
+  } else {
+    panel.style.display = 'flex';
+    document.getElementById('adjc-'+id).textContent = adjTemp[id];
+  }
+}
+function adjustCycle(id, delta) {
+  if (adjTemp[id] === undefined) adjTemp[id] = 0;
+  adjTemp[id] = Math.max(0, Math.min(6, adjTemp[id] + delta));
+  document.getElementById('adjc-'+id).textContent = adjTemp[id];
+}
+function confirmAdjust(id) {
+  const newCycle = adjTemp[id];
+  delete adjTemp[id];
+  const s = getJpState(id);
+  s.cycle = newCycle;
+  s.reviews = Math.max(s.reviews||0, newCycle);
+  s.lastReview = today();
+  if (newCycle >= 6) {
+    s.status = 'completed'; s.nextReview = null;
+  } else {
+    s.status = 'waiting';
+    s.nextReview = addDays(today(), EBBINGHAUS[newCycle]);
+  }
+  saveJpState(id, s);
+  renderJapanese();
 }
 
 // ===== FLASHCARDS — 单卡片翻转 =====
