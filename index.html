@@ -343,7 +343,7 @@ function saveJpState(lineId,s){
   const p=getJpProgress();p[lineId]=s;setJpProgress(p);
 }
 function isDue(s){
-  if(s.status==='active')return s.nextReview&&s.nextReview<=today();
+  if(s.status==='active'||s.status==='waiting')return s.nextReview&&s.nextReview<=today();
   if(s.status==='forgotten')return s.nextReview&&s.nextReview<=today();
   return false;
 }
@@ -369,7 +369,7 @@ function renderJapanese(){
   let html='';
   JAPANESE_SONG.lines.forEach((l,i)=>{
     const s=getJpState(l.id);
-    const cls=s.status==='locked'?'locked':s.status==='completed'?'completed':s.status==='active'?'active':(isDue(s)&&s.status==='forgotten'?'active':s.status==='forgotten'?'forgotten':'');
+    const cls=s.status==='locked'?'locked':s.status==='completed'?'completed':s.status==='active'||(isDue(s)&&s.status==='forgotten')||(isDue(s)&&s.status==='waiting')?'active':s.status==='forgotten'?'forgotten':s.status==='waiting'?'waiting':'';
     const statusLabel={locked:'🔒 未解锁','active':'⭐ 待复习',waiting:'⏳ 等待中',completed:'✅ 已完成',forgotten:'🔄 明天重试'}[s.status]||s.status;
     let dots='';
     for(let c=0;c<6;c++){
@@ -390,7 +390,7 @@ function renderJapanese(){
         <button class="btn btn-sm" onclick="unlockLine('${l.id}')">🔓 解锁开启复习</button>
       </div>
       <div class="action-row" style="${s.status==='locked'?'display:none':''}">
-        ${(s.status==='active'||(isDue(s)&&s.status==='forgotten'))?`
+        ${(s.status==='active'||s.status==='waiting'||(isDue(s)&&s.status==='forgotten'))?`
           <button class="btn btn-sm btn-green" onclick="reviewJp('${l.id}','remember')">✅ 记住了</button>
           <button class="btn btn-sm btn-red" onclick="reviewJp('${l.id}','forgot')">🔄 忘了</button>
         `:s.status==='waiting'?`<span style="font-size:13px;color:var(--dim)">下次复习：${s.nextReview||'待定'}</span>`:''}
