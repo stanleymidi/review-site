@@ -6,6 +6,8 @@ from flask import Flask, request, send_file, jsonify, make_response
 
 app = Flask(__name__)
 
+EDGE_TTS = "/usr/local/bin/edge-tts"  # launchd 环境需要完整路径
+
 CACHE_DIR = os.path.expanduser("~/.hermes/tts_cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
 
@@ -31,7 +33,7 @@ def tts():
         tmp.close()
         try:
             subprocess.run(
-                ["edge-tts", "--voice", VOICE, "--rate", RATE,
+                [EDGE_TTS, "--voice", VOICE, "--rate", RATE,
                  "--text", text, "--write-media", tmp.name],
                 check=True, capture_output=True, timeout=30
             )
