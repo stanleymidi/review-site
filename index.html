@@ -682,10 +682,19 @@ function wrShuffle(arr) {
 
 function wrRefresh() {
   const pg = wrGetP();
+  const now = Date.now();
   const due = [];
   WORD_LIST.forEach((w, i) => {
     const s = pg[i];
-    if (!s || s.status !== 'known') due.push(i);
+    if (!s) {
+      due.push(i); // 新词，直接排入
+    } else if (s.status === 'learning') {
+      due.push(i); // 学习中，每次都要复习
+    } else if (s.status === 'review' || s.status === 'known') {
+      if (!s.nextReview || s.nextReview <= now) {
+        due.push(i); // 到期了，需要复习
+      }
+    }
   });
   wrQueue = wrShuffle(due);
   wrIdx = 0; wrFlipped = false; wrWordIdx = -1;
@@ -697,12 +706,28 @@ function wrRefresh() {
 function wrShowStats() {
   const pg = wrGetP();
   const total = WORD_LIST.length;
-  let known = 0;
-  Object.values(pg).forEach(s => { if (s && s.status === 'known') known++; });
+  const now = Date.now();
+  let mastered = 0, learning = 0, pending = 0;
+  WORD_LIST.forEach((w, i) => {
+    const s = pg[i];
+    if (!s) {
+      pending++;
+    } else if (s.status === 'review' || (s.reps >= 3)) {
+      if (s.nextReview && s.nextReview <= now) {
+        pending++; // 到期需复习
+      } else {
+        mastered++; // 已掌握，还没到期
+      }
+    } else if (s.status === 'learning') {
+      learning++;
+    } else {
+      pending++;
+    }
+  });
   document.getElementById('wr-stats').innerHTML =
     '<div class="stat">📝 <span class="num">' + total + '</span><br>总词数</div>' +
-    '<div class="stat">⭐ <span class="num">' + wrQueue.length + '</span><br>待复习</div>' +
-    '<div class="stat">✅ <span class="num">' + known + '</span><br>已掌握</div>';
+    '<div class="stat">📚 <span class="num">' + (pending + learning) + '</span><br>待复习</div>' +
+    '<div class="stat">⭐ <span class="num">' + mastered + '</span><br>已掌握</div>';
 }
 
 function wrPlaySound() {
@@ -755,17 +780,35 @@ function wrFlip() {
 function wrReview(action) {
   if (wrWordIdx < 0) return;
   const pg = wrGetP();
-  const s = pg[wrWordIdx] || {};
+  let s = pg[wrWordIdx] || {};
+
   if (action === 'know') {
-    s.status = 'known';
+    // 记住了 → 艾宾浩斯间隔排期
+    const intervals = [1, 2, 4, 7, 15, 30, 60, 90, 120];
+    const reps = (s.reps || 0) + 1;
+    const idx = Math.min(reps - 1, intervals.length - 1);
+    const interval = intervals[idx];
+
+    pg[wrWordIdx] = {
+      status: reps >= 3 ? 'review' : 'learning',
+      interval: interval,
+      nextReview: Date.now() + interval * 24 * 60 * 60 * 1000,
+      reps: reps
+    };
+    wrSetP(pg);
+    wrIdx++; // 学习成功，移到下一张
   } else {
-    s.status = 'learning';
+    // 下次再考 → 不记进度，丢到队尾
+    const wordIdx = wrQueue[wrIdx];
+    wrQueue.splice(wrIdx, 1);
+    wrQueue.push(wordIdx);
+    // wrIdx 不变，下一轮显示原本的下一个
   }
-  pg[wrWordIdx] = s;
-  wrSetP(pg);
-  wrIdx++;
+
   if (wrIdx < wrQueue.length) {
     document.getElementById('wr-badge').textContent = wrQueue.length - wrIdx;
+  } else {
+    document.getElementById('wr-badge').textContent = 0;
   }
   wrShowCard();
   wrShowStats();
