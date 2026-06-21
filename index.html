@@ -746,25 +746,44 @@ setTimeout(wrPickVoice, 500);
 const TTS_SERVER = 'http://localhost:8765';
 let ttsAudio = null;
 
-function wrPlaySound() {
+async function wrPlaySound() {
   const w = WORD_LIST[wrWordIdx];
   if (!w) return;
   const text = w.fullForm || w.form;
 
   // 停掉正在播放的
   if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
+  speechSynthesis.cancel();
 
-  const url = TTS_SERVER + '/tts?text=' + encodeURIComponent(text);
-  const audio = new Audio(url);
-  ttsAudio = audio;
-  audio.play().catch(function(e){
-    // 如果本地服务连不上，fallback 到浏览器语音
+  try {
+    // 先验证服务是否在线
+    const ping = await fetch(TTS_SERVER + '/ping', { cache: 'no-store' });
+    if (!ping.ok) throw new Error('TTS server not ready');
+
+    // fetch 音频二进制
+    const url = TTS_SERVER + '/tts?text=' + encodeURIComponent(text);
+    const resp = await fetch(url, { cache: 'no-store' });
+    if (!resp.ok) throw new Error('TTS error: ' + resp.status);
+
+    const blob = await resp.blob();
+    if (blob.size < 100) throw new Error('TTS returned tiny file');
+    const blobUrl = URL.createObjectURL(blob);
+    const audio = new Audio(blobUrl);
+    ttsAudio = audio;
+    audio.play();
+    // 播放完后释放 blob URL
+    audio.onended = function(){ URL.revokeObjectURL(blobUrl); };
+  } catch(e) {
     console.warn('Edge TTS 不可用，降级到浏览器语音', e);
+    // 降级：浏览器语音合成
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ja-JP'; u.rate = 0.8; u.pitch = 1.0; u.volume = 1.0;
+    u.lang = 'ja-JP';
+    u.rate = 0.8;
+    u.pitch = 1.0;
+    u.volume = 1.0;
     if (wrBestVoice) u.voice = wrBestVoice;
     speechSynthesis.speak(u);
-  });
+  }
 }
 
 function wrShowCard() {
