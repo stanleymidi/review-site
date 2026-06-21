@@ -740,21 +740,31 @@ function wrPickVoice() {
     || jp[0];
 }
 window.speechSynthesis.onvoiceschanged = wrPickVoice;
-// 立即试一次（可能为空，但 onvoiceschanged 会补上）
 setTimeout(wrPickVoice, 500);
+
+// Edge TTS 本地服务端点
+const TTS_SERVER = 'http://localhost:8765';
+let ttsAudio = null;
 
 function wrPlaySound() {
   const w = WORD_LIST[wrWordIdx];
   if (!w) return;
   const text = w.fullForm || w.form;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'ja-JP';
-  u.rate = 0.8;
-  u.pitch = 1.0;
-  u.volume = 1.0;
-  if (wrBestVoice) u.voice = wrBestVoice;
-  speechSynthesis.speak(u);
+
+  // 停掉正在播放的
+  if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
+
+  const url = TTS_SERVER + '/tts?text=' + encodeURIComponent(text);
+  const audio = new Audio(url);
+  ttsAudio = audio;
+  audio.play().catch(function(e){
+    // 如果本地服务连不上，fallback 到浏览器语音
+    console.warn('Edge TTS 不可用，降级到浏览器语音', e);
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ja-JP'; u.rate = 0.8; u.pitch = 1.0; u.volume = 1.0;
+    if (wrBestVoice) u.voice = wrBestVoice;
+    speechSynthesis.speak(u);
+  });
 }
 
 function wrShowCard() {
