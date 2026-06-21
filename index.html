@@ -163,6 +163,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div class="tab" data-tab="flashcard" onclick="switchTab('flashcard')">
     📋 制度卡片 <span class="badge" id="fc-badge">52</span>
   </div>
+  <div class="tab" data-tab="wordreview" onclick="switchTab('wordreview')">
+    📝 单词 <span class="badge" id="wr-badge">0</span>
+  </div>
 </div>
 
 <!-- Japanese Panel -->
@@ -219,6 +222,48 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <p id="fcEmptyMsg"></p>
     </div>
     <div class="fc-legend" id="fcLegend"></div>
+  </div>
+</div>
+
+<!-- Word Review Panel -->
+<div class="panel" id="panel-wordreview">
+  <div class="header">
+    <h1>📝 单词卡 — 冬の花</h1>
+    <div class="text-center mt-8"><button class="btn btn-outline btn-sm" onclick="wrResetAll()">🔄 全部重置</button></div>
+    <div class="sub">随机抽选，逐个复习</div>
+  </div>
+  <div id="wr-panel-inner">
+    <div class="stats" id="wr-stats"></div>
+    <div class="fc-card-wrap" id="wrCardWrap" style="display:none" onclick="wrFlip()">
+      <div class="fc-card" id="wrCard">
+        <div class="fc-face fc-front" style="background:linear-gradient(145deg,#1a3a1a,#2a5a2a);border-color:rgba(100,200,100,.15)">
+          <div class="fc-label">📝 这个单词怎么读？</div>
+          <div class="fc-question" id="wrQuestion" style="font-size:28px">加载中...</div>
+          <div class="fc-hint">👆 点击卡片翻转</div>
+        </div>
+        <div class="fc-face fc-back" style="background:linear-gradient(145deg,#1e3a5f,#2a5298);border-color:rgba(255,255,255,.1);transform:rotateY(180deg)">
+          <div class="fc-back-scroll">
+            <div class="ans-label">🔊 读音</div>
+            <div class="ans-text" id="wrReading" style="font-size:22px;color:#f0c060"></div>
+            <div class="ans-label" style="margin-top:12px">💡 释义</div>
+            <div class="ans-text" id="wrMeaning" style="color:#b8d4b8;font-size:16px"></div>
+            <div class="src-box" style="margin-top:14px">
+              <div class="sl">🎵 出自歌词</div>
+              <div class="st" id="wrExample" style="color:#ccc;margin-top:3px;font-size:13px"></div>
+              <div class="st" id="wrExampleCn" style="color:#6a8fbb;margin-top:2px;font-size:12px"></div>
+            </div>
+          </div>
+          <div class="fc-btns" id="wrBtns">
+            <button class="fc-btn fc-btn-revisit" onclick="event.stopPropagation();wrReview('revisit')">🔁 下次再考</button>
+            <button class="fc-btn fc-btn-know" onclick="event.stopPropagation();wrReview('know')">✅ 记住了</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="wrEmpty" class="fc-empty" style="display:none">
+      <h2>🎉</h2>
+      <p id="wrEmptyMsg"></p>
+    </div>
   </div>
 </div>
 
@@ -593,11 +638,136 @@ function fcRenderLegend(){
   const order=Object.keys(cats).sort((a,b)=>FCAT_ORDER[a]-FCAT_ORDER[b]);
   document.getElementById('fcLegend').innerHTML=order.map(k=>'<div class="fc-legend-item"><div class="fc-legend-dot" style="background:'+fcCatColor(k)+'"></div> '+k+'</div>').join('');
 }
+// ===== WORD REVIEW — 单词随机闪卡 =====
+function buildWordList() {
+  const seen = {};
+  const words = [];
+  JAPANESE_SONG.lines.forEach(line => {
+    line.words.forEach(([form, reading, meaning]) => {
+      if (!seen[reading]) {
+        seen[reading] = true;
+        // Extract just the kanji part from "花(はな)" -> "花"
+        let frontForm = form;
+        const m = form.match(/^(.+?)\(/);
+        if (m) frontForm = m[1].trim();
+        words.push({
+          form: frontForm,
+          fullForm: form,
+          reading: reading,
+          meaning: meaning,
+          example: line.japanese,
+          exampleCn: line.chinese,
+          lineId: line.id
+        });
+      }
+    });
+  });
+  return words;
+}
+const WORD_LIST = buildWordList();
+
+let wrQueue = [], wrIdx = 0, wrFlipped = false, wrWordIdx = -1;
+
+function wrGetP() { try { return JSON.parse(localStorage.getItem('wr_progress'))||{}; } catch(e) { return {}; } }
+function wrSetP(p) { localStorage.setItem('wr_progress',JSON.stringify(p)); }
+
+function wrShuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function wrRefresh() {
+  const pg = wrGetP();
+  const due = [];
+  WORD_LIST.forEach((w, i) => {
+    const s = pg[i];
+    if (!s || s.status !== 'known') due.push(i);
+  });
+  wrQueue = wrShuffle(due);
+  wrIdx = 0; wrFlipped = false; wrWordIdx = -1;
+  document.getElementById('wr-badge').textContent = wrQueue.length;
+  wrShowStats();
+  wrShowCard();
+}
+
+function wrShowStats() {
+  const pg = wrGetP();
+  const total = WORD_LIST.length;
+  let known = 0;
+  Object.values(pg).forEach(s => { if (s && s.status === 'known') known++; });
+  document.getElementById('wr-stats').innerHTML =
+    '<div class="stat">📝 <span class="num">' + total + '</span><br>总词数</div>' +
+    '<div class="stat">⭐ <span class="num">' + wrQueue.length + '</span><br>待复习</div>' +
+    '<div class="stat">✅ <span class="num">' + known + '</span><br>已掌握</div>';
+}
+
+function wrShowCard() {
+  if (wrQueue.length === 0 || wrIdx >= wrQueue.length) {
+    document.getElementById('wrCardWrap').style.display = 'none';
+    document.getElementById('wrEmpty').style.display = 'block';
+    document.getElementById('wrEmptyMsg').textContent = '🎉 所有单词都复习完了！下次继续。';
+    return;
+  }
+  wrWordIdx = wrQueue[wrIdx];
+  const w = WORD_LIST[wrWordIdx];
+  wrFlipped = false;
+  document.getElementById('wrCard').classList.remove('flipped');
+  document.getElementById('wrBtns').classList.remove('show');
+  document.getElementById('wrCardWrap').style.display = 'block';
+  document.getElementById('wrEmpty').style.display = 'none';
+  document.getElementById('wrQuestion').textContent = w.form;
+  document.getElementById('wrReading').textContent = w.reading;
+  document.getElementById('wrMeaning').textContent = w.meaning;
+  document.getElementById('wrExample').textContent = w.example;
+  document.getElementById('wrExampleCn').textContent = w.exampleCn;
+}
+
+function wrFlip() {
+  if (wrFlipped) return;
+  const card = document.getElementById('wrCard');
+  const btns = document.getElementById('wrBtns');
+  if (!card || !btns) return;
+  card.classList.add('flipped');
+  btns.classList.add('show');
+  wrFlipped = true;
+}
+
+function wrReview(action) {
+  if (wrWordIdx < 0) return;
+  const pg = wrGetP();
+  const s = pg[wrWordIdx] || {};
+  if (action === 'know') {
+    s.status = 'known';
+  } else {
+    s.status = 'learning';
+  }
+  pg[wrWordIdx] = s;
+  wrSetP(pg);
+  wrIdx++;
+  if (wrIdx < wrQueue.length) {
+    document.getElementById('wr-badge').textContent = wrQueue.length - wrIdx;
+  }
+  wrShowCard();
+  wrShowStats();
+}
+
+function wrResetAll(){
+  if(!confirm('确定全部重置？所有单词进度将清零。'))return;
+  wrSetP({});wrRefresh();
+}
+
+// Init on load
+wrRefresh();
+
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));
   if(name==='japanese')renderJapanese();
-  else fcRefresh();
+  else if(name==='flashcard')fcRefresh();
+  else if(name==='wordreview')wrRefresh();
 }
 function toggleExpand(id){
   const el=document.getElementById(id);
