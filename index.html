@@ -268,6 +268,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
 </div>
 
+<script src="audio_map.js"></script>
 <script>
 // ===== 密码锁 =====
 const PW_HASH = "fa3c95410a7553af04d7ce873c0e7512d8c6a3c265fc5a4542311d43ea6443ce"; // sha256("472311")
@@ -742,48 +743,39 @@ function wrPickVoice() {
 window.speechSynthesis.onvoiceschanged = wrPickVoice;
 setTimeout(wrPickVoice, 500);
 
-// Edge TTS 本地服务端点
-const TTS_SERVER = 'http://localhost:8765';
+// ===== 单词卡发音系统 =====
+// 方案1: 用预生成音频文件（GitHub Pages 无跨域问题，主方案）
+// 方案2: 降级到 windows Speech Synthesis（浏览器方案）
 let ttsAudio = null;
 
-async function wrPlaySound() {
+function wrPlaySound() {
   const w = WORD_LIST[wrWordIdx];
   if (!w) return;
-  const text = w.fullForm || w.form;
-
+  // 用 reading 作为 AUDIO_MAP 的键
+  const text = w.reading || w.fullForm || w.form;
+  
   // 停掉正在播放的
   if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
   speechSynthesis.cancel();
 
-  try {
-    // 先验证服务是否在线
-    const ping = await fetch(TTS_SERVER + '/ping', { cache: 'no-store' });
-    if (!ping.ok) throw new Error('TTS server not ready');
-
-    // fetch 音频二进制
-    const url = TTS_SERVER + '/tts?text=' + encodeURIComponent(text);
-    const resp = await fetch(url, { cache: 'no-store' });
-    if (!resp.ok) throw new Error('TTS error: ' + resp.status);
-
-    const blob = await resp.blob();
-    if (blob.size < 100) throw new Error('TTS returned tiny file');
-    const blobUrl = URL.createObjectURL(blob);
-    const audio = new Audio(blobUrl);
+  // 尝试用预生成音频文件
+  const audioFile = AUDIO_MAP[text];
+  if (audioFile) {
+    const audio = new Audio(audioFile);
     ttsAudio = audio;
     audio.play();
-    // 播放完后释放 blob URL
-    audio.onended = function(){ URL.revokeObjectURL(blobUrl); };
-  } catch(e) {
-    console.warn('Edge TTS 不可用，降级到浏览器语音', e);
-    // 降级：浏览器语音合成
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ja-JP';
-    u.rate = 0.8;
-    u.pitch = 1.0;
-    u.volume = 1.0;
-    if (wrBestVoice) u.voice = wrBestVoice;
-    speechSynthesis.speak(u);
+    return;
   }
+  
+  // 如果预生成音频不存在，降级到浏览器语音合成
+  console.warn('未找到音频文件: ' + text + '，使用浏览器语音');
+  const u = new SpeechSynthesisUtterance(w.fullForm || w.form);
+  u.lang = 'ja-JP';
+  u.rate = 0.8;
+  u.pitch = 1.0;
+  u.volume = 1.0;
+  if (wrBestVoice) u.voice = wrBestVoice;
+  speechSynthesis.speak(u);
 }
 
 function wrShowCard() {
