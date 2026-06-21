@@ -730,6 +730,19 @@ function wrShowStats() {
     '<div class="stat">⭐ <span class="num">' + mastered + '</span><br>已掌握</div>';
 }
 
+// 选最好的日语发音人（延迟加载兼容）
+let wrBestVoice = null;
+function wrPickVoice() {
+  const voices = speechSynthesis.getVoices();
+  const jp = voices.filter(v => v.lang.startsWith('ja'));
+  wrBestVoice = jp.find(v => /otoya|kyoko|google/i.test(v.name) && v.localService)
+    || jp.find(v => v.localService)
+    || jp[0];
+}
+window.speechSynthesis.onvoiceschanged = wrPickVoice;
+// 立即试一次（可能为空，但 onvoiceschanged 会补上）
+setTimeout(wrPickVoice, 500);
+
 function wrPlaySound() {
   const w = WORD_LIST[wrWordIdx];
   if (!w) return;
@@ -737,9 +750,10 @@ function wrPlaySound() {
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'ja-JP';
-  u.rate = 0.85;
+  u.rate = 0.8;
   u.pitch = 1.0;
   u.volume = 1.0;
+  if (wrBestVoice) u.voice = wrBestVoice;
   speechSynthesis.speak(u);
 }
 
